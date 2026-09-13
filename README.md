@@ -10,14 +10,9 @@ poe.ninja price next to each reward row, right in the game window:
 | --- | --- |
 | ![Expedition Price Check example 1](./docs/reference-images/ExpeditionPriceCheck1.png) | ![Expedition Price Check example 2](./docs/reference-images/ExpeditionPriceCheck2.png) |
 
-It is not the official project and isn't published as a release. If you're
-looking for the actual Exiled Exchange 2 app, go to the upstream link above.
+Path of Exile 2 overlay program for price checking items, among many other loved features - forked from [Awakened PoE Trade](https://github.com/SnosMe/awakened-poe-trade).
 
-Path of Exile 2 overlay program for price checking items, among many other loved features.
-
-Fork of [Awakened PoE Trade](https://github.com/SnosMe/awakened-poe-trade).
-
-The ONLY official download sites for upstream Exiled Exchange 2 are <https://kvan7.github.io/Exiled-Exchange-2/download> or <https://github.com/Kvan7/Exiled-Exchange-2/releases>, any other locations are not official and may be malicious. This fork isn't distributed anywhere - build it from source (see Development, below).
+This fork isn't the official project or distributed anywhere - build it from source (see Development, below). For the actual Exiled Exchange 2 app, the only official sources are <https://kvan7.github.io/Exiled-Exchange-2/download> or <https://github.com/Kvan7/Exiled-Exchange-2/releases>; anywhere else may be malicious.
 
 ## Moving from POE1/Awakened PoE Trade
 
