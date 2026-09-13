@@ -53,6 +53,8 @@
     </div>
 
     <UiCheckbox v-model="showRawOcr">{{ t(":show_raw_ocr") }}</UiCheckbox>
+    <UiCheckbox v-model="colorCodeValues">{{ t(":color_code_values") }}</UiCheckbox>
+    <UiCheckbox v-model="uncapNameWidth">{{ t(":uncap_name_width") }}</UiCheckbox>
   </div>
 
   <!-- Teleported to <body>: needs to sit over the actual game, not inside the
@@ -62,7 +64,7 @@
   <Teleport to="body">
     <div
       class="fixed cursor-move"
-      style="z-index: 9999; border: 2px solid #22c55e; box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.45)"
+      style="z-index: 9999; border: 2px solid #22c55e"
       :style="regionPreviewStyle"
       @mousedown="startDrag('move', $event)"
     >
@@ -90,7 +92,7 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import { useI18nNs } from "@/web/i18n";
 import {
   configProp,
@@ -137,6 +139,8 @@ const regionWidth = regionField("width");
 const regionHeight = regionField("height");
 
 const showRawOcr = configModelValue(() => props.configWidget, "showRawOcr");
+const colorCodeValues = configModelValue(() => props.configWidget, "colorCodeValues");
+const uncapNameWidth = configModelValue(() => props.configWidget, "uncapNameWidth");
 
 // Percentages resolve against the fixed-positioned element's viewport directly, so no
 // pixel math against window.innerWidth/innerHeight is needed here.
@@ -147,6 +151,14 @@ const regionPreviewStyle = computed(() => {
     top: `${region.y * 100}%`,
     width: `${region.width * 100}%`,
     height: `${region.height * 100}%`,
+    // The 9999px-spread box-shadow trick dims everything outside the box - genuinely
+    // useful while dragging (makes the boundary obvious against the game), but
+    // darkening the whole screen for as long as this settings tab merely happens to
+    // be open (e.g. while looking at an unrelated checkbox) was the actual
+    // complaint. Only apply it during an active drag; the green border below is
+    // always visible on its own, so the box's position stays checkable at a glance
+    // either way.
+    boxShadow: isDragging.value ? "0 0 0 9999px rgba(0, 0, 0, 0.45)" : "none",
   };
 });
 
@@ -170,10 +182,18 @@ const corners: Array<{
 
 const MIN_REGION_SIZE = 0.02;
 
+// The dim-everything-else spotlight (see regionOverlayStyle) is only useful
+// while actively dragging the box - it needs to stay visible (so the box's
+// position is still checkable at a glance) for as long as this settings tab is
+// open, but darkening the entire game behind it the whole time, even just to
+// glance at an unrelated checkbox, was the actual complaint.
+const isDragging = ref(false);
+
 function startDrag(mode: DragMode, e: MouseEvent) {
   const region = props.configWidget.region;
   if (!region) return;
   e.preventDefault();
+  isDragging.value = true;
 
   const startClientX = e.clientX;
   const startClientY = e.clientY;
@@ -212,6 +232,7 @@ function startDrag(mode: DragMode, e: MouseEvent) {
   }
 
   function onUp() {
+    isDragging.value = false;
     document.removeEventListener("mousemove", onMove);
     document.removeEventListener("mouseup", onUp);
   }

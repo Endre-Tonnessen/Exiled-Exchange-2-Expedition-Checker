@@ -1,6 +1,6 @@
 <template>
   <Widget :config="config" move-handles="corners" :inline-edit="false">
-    <div style="min-width: 20rem">
+    <div :style="{ width: containerWidth }">
       <div v-if="!config.region" class="widget-default-style p-3 text-gray-100 text-lg text-gray-500">
         {{ t(":no_region") }}
       </div>
@@ -14,18 +14,21 @@
            so each row's `top: Y%` lands next to its actual row in the game panel,
            rather than the rows being stacked top-to-bottom in a separate list. -->
       <div v-else :style="{ position: 'relative', height: regionHeightVh }">
+        <!-- Price first and never truncated (the primary information at a glance);
+             name second, smaller/muted and free to truncate - it's only there for
+             the edge case of checking what OCR actually recognized, not something
+             read during normal play. Price-first also means every price starts at
+             the same left-aligned X by construction, so - unlike the previous
+             price-on-the-right layout - no width computation is needed just to
+             keep them lined up. -->
         <div
           v-for="(row, i) in rows"
           :key="i"
-          class="widget-default-style absolute left-0 flex justify-between gap-4 px-3 py-1.5 text-lg font-medium text-gray-100 whitespace-nowrap"
+          class="widget-default-style absolute left-0 w-full flex items-baseline gap-2 px-3 py-1.5 whitespace-nowrap"
           :style="rowStyle(row)"
         >
-          <span class="truncate">{{ row.quantity }}x {{ row.displayName }}</span>
-          <span
-            class="shrink-0"
-            :class="row.priceText === '?' ? 'text-gray-500' : 'text-gray-100'"
-            >{{ row.priceText }}</span
-          >
+          <span class="shrink-0 text-lg font-semibold" :class="priceColorClass(row)">{{ row.priceText }}</span>
+          <span class="truncate min-w-0 text-sm text-gray-500">{{ row.quantity }}x {{ row.displayName }}</span>
         </div>
       </div>
       <div
@@ -104,7 +107,17 @@ if (props.config.wmFlags[0] === "uninitialized") {
   positionRightOfRegion(props.config.region);
   props.config.pollIntervalMs = 700;
   props.config.showRawOcr = false;
+  props.config.colorCodeValues = true;
+  props.config.uncapNameWidth = true;
   wm.show(props.config.wmId);
+}
+// Backfill for a widget saved before these existed - strict undefined checks,
+// not falsy, so an existing user's deliberate "off" is never overwritten.
+if (props.config.colorCodeValues === undefined) {
+  props.config.colorCodeValues = true;
+}
+if (props.config.uncapNameWidth === undefined) {
+  props.config.uncapNameWidth = true;
 }
 // No "invisible-on-blur" here (unlike e.g. Stopwatch, which this was originally
 // modeled on): the whole point of this widget is to show scan results *during*
@@ -134,6 +147,20 @@ const rawRows = shallowRef<RawRow[]>([]);
 // consistent with how Widget.vue's own anchor positioning already works (it's
 // computed from window.innerWidth/innerHeight, not a CSS-relative ancestor).
 const regionHeightVh = computed(() => `${(props.config.region?.height ?? 0) * 100}vh`);
+
+// uncapNameWidth (on by default) grows this to fit the longest currently-visible
+// row so the full name always has room to render, using a `ch`-based
+// per-character estimate (see git history for the original width computation
+// this replaced). Turned off, it's a fixed compact width and the name is
+// allowed to truncate within it (see the row markup).
+const containerWidth = computed(() => {
+  if (!props.config.uncapNameWidth) return "16rem";
+  const longest = rows.value.reduce((max, r) => {
+    const len = `${r.quantity}x ${r.displayName}`.length + r.priceText.length;
+    return Math.max(max, len);
+  }, 20);
+  return `${longest + 6}ch`;
+});
 
 function rowStyle(row: DisplayRow) {
   return {
@@ -186,6 +213,15 @@ interface DisplayRow {
   /** fraction (0-1) of the capture region's height - see rowStyle() */
   y: number;
   height: number;
+  /** total (quantity-adjusted) value in the same unit price-match.ts's entries
+   * use, null when unresolved - the ranking key for valueTier below, kept
+   * separate from priceText since that's already formatted/currency-converted
+   * for display and no longer comparable across rows. */
+  totalValue: number | null;
+  /** rank among this poll's *other resolved* rows - null when unresolved (a "?"
+   * row is never colored regardless of this or the colorCodeValues setting).
+   * See buildRows() for how ties are handled. */
+  valueTier: "high" | "mid" | "low" | null;
 }
 
 // Every line that parses as a plausible reward row (parseLine already rejects the
@@ -228,9 +264,13 @@ function buildRows(sourceRows: RawRow[]): DisplayRow[] {
     const lookupKey = gem.isGemRow ? gem.key : parsed.name;
 
     let priceText = "?";
+    let totalValue: number | null = null;
     if (lookupKey) {
       const resolved = resolvePrice(lookupKey, priceIndex);
-      if (resolved) priceText = formatPrice(resolved.entry.primaryValue, parsed.quantity);
+      if (resolved) {
+        totalValue = resolved.entry.primaryValue * parsed.quantity;
+        priceText = formatPrice(resolved.entry.primaryValue, parsed.quantity);
+      }
     }
     out.push({
       quantity: parsed.quantity,
@@ -238,15 +278,53 @@ function buildRows(sourceRows: RawRow[]): DisplayRow[] {
       priceText,
       y: raw.y,
       height: raw.height,
+      totalValue,
+      valueTier: null, // filled in below, once every row's totalValue is known
     });
   }
 
+  assignValueTiers(out);
   return out;
+}
+
+// Ranks by total value among this poll's own resolved rows - relative, not an
+// absolute currency cutoff, so it stays meaningful as the league's economy
+// drifts over time without ever needing retuning, and it directly answers the
+// actual decision under a timer: "which of these specific options is best,"
+// not "is this above some number picked three leagues ago." The highest value
+// is tiered "high" and the lowest "low" even when only one resolved row exists
+// (or every resolved row ties) - "this is the best available" is still a true,
+// non-misleading statement with only one option, so there's no separate
+// "can't compare" state to design for.
+function assignValueTiers(rows: DisplayRow[]): void {
+  const values = rows
+    .map((r) => r.totalValue)
+    .filter((v): v is number => v !== null);
+  if (values.length === 0) return;
+
+  const max = Math.max(...values);
+  const min = Math.min(...values);
+  for (const row of rows) {
+    if (row.totalValue === null) continue;
+    row.valueTier = row.totalValue === max ? "high" : row.totalValue === min ? "low" : "mid";
+  }
 }
 
 function formatPrice(primaryValueDivine: number, quantity: number): string {
   const currencyValue = autoCurrency(primaryValueDivine * quantity);
   return `${displayRounding(currencyValue.min, false, true)} ${currencyValue.currency}`;
+}
+
+const VALUE_TIER_CLASS: Record<"high" | "mid" | "low", string> = {
+  high: "text-green-400",
+  mid: "text-yellow-400",
+  low: "text-red-400",
+};
+
+function priceColorClass(row: DisplayRow): string {
+  if (row.priceText === "?") return "text-gray-500";
+  if (props.config.colorCodeValues && row.valueTier) return VALUE_TIER_CLASS[row.valueTier];
+  return "text-gray-100";
 }
 
 Host.onEvent("MAIN->CLIENT::ocr-text", (e) => {
