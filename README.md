@@ -2,13 +2,18 @@
 
 **This is a personal fork of [Kvan7/Exiled-Exchange-2](https://github.com/Kvan7/Exiled-Exchange-2),
 customized for my own use** — notably an added Expedition Price Check widget
-(see [EXPEDITION_CHECK.md](./EXPEDITION_CHECK.md)) that OCRs the Expedition
-"Runeshape Combinations" reward panel via Windows' native OCR and shows a live
+(see [EXPEDITION_CHECK.md](./EXPEDITION_CHECK.md)) that OCRs the Path of
+Exile 2 Expedition "Runeshape Combinations" reward panel and shows a live
 poe.ninja price next to each reward row, right in the game window:
 
-| | |
-| --- | --- |
-| ![Expedition Price Check example 1](./docs/reference-images/ExpeditionPriceCheck1.png) | ![Expedition Price Check example 2](./docs/reference-images/ExpeditionPriceCheck2.png) |
+| | | |
+| --- | --- | --- |
+| ![Expedition Price Check example 1](./docs/reference-images/ExpeditionPriceCheck1.png) | ![Expedition Price Check example 2](./docs/reference-images/ExpeditionPriceCheck2.png) | ![Expedition Price Check example 3](./docs/reference-images/ExpeditionPriceCheck3.png) |
+
+**Expedition Price Check is Windows-only** - it reads the panel via Windows'
+own OCR engine (`Windows.Media.Ocr`), which has no equivalent on other
+platforms. The rest of the app (everything from upstream Exiled Exchange 2)
+remains cross-platform; only this one added feature is gated to Windows.
 
 Path of Exile 2 overlay program for price checking items, among many other loved features - forked from [Awakened PoE Trade](https://github.com/SnosMe/awakened-poe-trade).
 
@@ -31,6 +36,19 @@ This fork isn't the official project or distributed anywhere - build it from sou
    ![Calibrate region, set hotkey, save](./docs/reference-images/ExpeditionSetupStep3.png)
 
 4. In-game, open a Runeshape Combinations panel and press the hotkey - a price should appear next to each recognized row.
+
+### Expedition Price Check settings
+
+All of the following live in the widget's own settings panel (**Edit**, per
+step 2 above).
+
+| Setting | Default | What it does |
+| --- | --- | --- |
+| Hotkey | `Shift + M` | Triggers a single scan of the calibrated region. |
+| Region (drag the green box, or type exact x/y/width/height fractions) | calibrated per-user | The area that gets OCR'd on each scan - see step 3 above. |
+| Color-code prices by rank | On | Colors each resolved price by how it ranks against the *other rows currently on screen* - highest is green, lowest is red, anything in between is yellow. This is relative to the current panel, not a fixed currency cutoff, so it keeps meaning the same thing as prices drift over a league. Example from the first screenshot above: rewards worth 4.2/4.4/8.4/1.2/12 exalted show 12 green, 1.2 red, and the other three yellow. A single resolved row (or every row tied at the same value) shows green. |
+| Show full names (uncapped width) | On | Lets the widget grow wide enough to show the full recognized name instead of truncating it, so a misread is easy to spot. Turn off for a more compact widget once you trust the matches and don't need to see the name day-to-day. |
+| Show raw OCR text (debug) | Off | Prints every unprocessed recognized line below the parsed rows - for diagnosing a new/changed panel layout or a matching problem without needing to instrument any code. |
 
 <!-- ## Moving from POE1/Awakened PoE Trade
 
