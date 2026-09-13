@@ -1,15 +1,19 @@
-# ![Perfect Jewelers Orb](./renderer/public/images/jeweler.png) Exiled Exchange 2
+# ![Perfect Jewelers Orb](./renderer/public/images/jeweler.png) Exiled Exchange 2 (personal fork)
 
-[![GitHub Downloads (specific asset, latest release)](https://img.shields.io/github/downloads/kvan7/exiled-exchange-2/latest/Exiled-Exchange-2-Setup-0.16.3.exe?style=plastic&link=https%3A%2F%2Ftooomm.github.io%2Fgithub-release-stats%2F%3Fusername%3Dkvan7%26repository%3DExiled-Exchange-2)](https://tooomm.github.io/github-release-stats/?username=kvan7&repository=Exiled-Exchange-2)
-[![GitHub Tag](https://img.shields.io/github/v/tag/kvan7/exiled-exchange-2?style=plastic&label=latest%20version)](https://github.com/Kvan7/Exiled-Exchange-2/releases/latest)
-[![GitHub commits since latest release (branch)](https://img.shields.io/github/commits-since/kvan7/exiled-exchange-2/latest/dev?style=plastic)](https://github.com/Kvan7/Exiled-Exchange-2/commits/dev/)
-[![Translation status](https://translate.codeberg.org/widget/exiled-exchange-2/svg-badge.svg)](https://translate.codeberg.org/engage/exiled-exchange-2/)
+**This is a personal fork of [Kvan7/Exiled-Exchange-2](https://github.com/Kvan7/Exiled-Exchange-2),
+customized for my own use** — notably an added Expedition Price Check widget
+(see [EXPEDITION_CHECK.md](./EXPEDITION_CHECK.md)) that OCRs the Expedition
+"Runeshape Combinations" reward panel via Windows' native OCR. It is not the
+official project, isn't published as a release, and the badges/download-stats
+the upstream README shows don't apply here (they'd just be displaying
+upstream's numbers, not this fork's) - removed for that reason. If you're
+looking for the actual Exiled Exchange 2 app, go to the upstream link above.
 
 Path of Exile 2 overlay program for price checking items, among many other loved features.
 
 Fork of [Awakened PoE Trade](https://github.com/SnosMe/awakened-poe-trade).
 
-The ONLY official download sites are <https://kvan7.github.io/Exiled-Exchange-2/download> or <https://github.com/Kvan7/Exiled-Exchange-2/releases>, any other locations are not official and may be malicious.
+The ONLY official download sites for upstream Exiled Exchange 2 are <https://kvan7.github.io/Exiled-Exchange-2/download> or <https://github.com/Kvan7/Exiled-Exchange-2/releases>, any other locations are not official and may be malicious. This fork isn't distributed anywhere - build it from source (see Development, below).
 
 ## Moving from POE1/Awakened PoE Trade
 
