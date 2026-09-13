@@ -821,6 +821,23 @@ function getConfigForHost(): HostConfig {
           action: { type: "ocr-text", target: "heist-gems" },
         });
       }
+    } else if (widget.wmType === "expedition-check") {
+      const expedition = widget as widget.ExpeditionWidget;
+      if (
+        expedition.mode === "hotkey" &&
+        expedition.hotkey &&
+        expedition.region
+      ) {
+        actions.push({
+          shortcut: expedition.hotkey,
+          keepModKeys: true,
+          action: {
+            type: "ocr-text",
+            target: "expedition-price",
+            region: expedition.region,
+          },
+        });
+      }
     }
   }
 

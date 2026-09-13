@@ -142,6 +142,7 @@ import SettingsStopwatch from "../stopwatch/settings-stopwatch.vue";
 import SettingsItemSearch from "../item-search/settings-item-search.vue";
 import SettingsLeveling from "../leveling/settings-leveling.vue";
 import SettingsLibrary from "../library/settings-library.vue";
+import SettingsExpedition from "../expedition-check/settings-expedition.vue";
 import { disableWidget, enableWidget, findWidget } from "./utils";
 
 function shuffle<T>(array: T[]): T[] {
@@ -349,6 +350,8 @@ function menuByType(type?: string) {
       return [[SettingsItemSearch]];
     case "library":
       return [[SettingsLibrary]];
+    case "expedition-check":
+      return [[SettingsExpedition]];
     default:
       return [
         [SettingsHotkeys, SettingsChat],

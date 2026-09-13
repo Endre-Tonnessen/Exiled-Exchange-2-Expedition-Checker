@@ -73,6 +73,25 @@ export interface DelveGridWidget extends Widget {
   toggleKey: string | null;
 }
 
+export interface ExpeditionCaptureRegion {
+  /** all fields are fractions (0..1) of the game window, not pixels - see cropImageFraction */
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+export interface ExpeditionWidget extends Widget {
+  anchor: Anchor;
+  mode: "hotkey" | "continuous";
+  hotkey: string | null;
+  region: ExpeditionCaptureRegion | null;
+  pollIntervalMs: number;
+  /** shows the unprocessed OCR text lines alongside the parsed rows, for diagnosing
+   * new/changed panels or matching issues without instrumenting code */
+  showRawOcr: boolean;
+}
+
 export interface ImageStripWidget extends Widget {
   anchor: Anchor;
   images: Array<{

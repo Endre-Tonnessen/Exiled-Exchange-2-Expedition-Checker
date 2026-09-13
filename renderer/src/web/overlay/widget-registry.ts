@@ -12,6 +12,7 @@ import WidgetSettings from "../settings/SettingsWindow.vue";
 import WidgetXpTracker from "../leveling/WidgetXpTracker.vue";
 import WidgetNotepad from "../notepad/WidgetNotepad.vue";
 import WidgetLibrary from "../library/WidgetLibrary.vue";
+import WidgetExpedition from "../expedition-check/WidgetExpedition.vue";
 
 type WidgetComponent = Component & { widget: WidgetSpec };
 
@@ -37,3 +38,4 @@ registry.widgets.push(WidgetImageStrip as unknown as WidgetComponent);
 registry.widgets.push(WidgetDelveGrid as unknown as WidgetComponent);
 registry.widgets.push(WidgetNotepad as unknown as WidgetComponent);
 registry.widgets.push(WidgetLibrary as unknown as WidgetComponent);
+registry.widgets.push(WidgetExpedition as unknown as WidgetComponent);

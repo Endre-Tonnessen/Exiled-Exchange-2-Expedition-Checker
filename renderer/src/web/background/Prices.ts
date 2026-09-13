@@ -17,6 +17,16 @@ type NinjaSchemaV1 = {
   }>;
 };
 
+// Minimal shape needed by any feature (e.g. expedition-check) that wants to search
+// across every entry in a category, rather than looking up one known name via
+// `findPriceByQuery`.
+export interface FlatPriceEntry {
+  name: string;
+  variant?: string;
+  primaryValue: number;
+  detailsId: string;
+}
+
 interface NinjaDenseExchangeInfo {
   name: string;
   variant?: string;
@@ -149,6 +159,10 @@ export const usePoeninja = createGlobalState(() => {
 
   const isLoading = shallowRef(false);
   let PRICES_DB: PriceDatabase = [];
+  // Full parse of the same overview blob PRICES_DB is built from, kept only for
+  // features that need to iterate every entry of a category (PRICES_DB itself stores
+  // each category as an unparsed JSON-substring for its own fast single-item lookup).
+  let PARSED_OVERVIEWS: Array<{ type: string; lines: FlatPriceEntry[] }> = [];
   let lastUpdateTime = 0;
   let downloadController: AbortController | undefined;
   let lastInterestTime = 0;
@@ -207,6 +221,14 @@ export const usePoeninja = createGlobalState(() => {
       const ninjaXchg = parseXchg(jsonBlob);
 
       PRICES_DB = splitJsonBlob(jsonBlob, ninjaSchema);
+      try {
+        // Isolated from the rest of `load()`: a parse issue here must not blank out
+        // PRICES_DB or anything else already working, only the categories consumed by
+        // getFlatPriceEntries (which then just keeps its previous snapshot).
+        PARSED_OVERVIEWS = JSON.parse(jsonBlob).itemOverviews ?? [];
+      } catch {
+        // keep previous PARSED_OVERVIEWS snapshot
+      }
 
       // TODO: update to search for requested currency instead of divine
       const divineRates = ninjaXchg.rates;
@@ -235,6 +257,18 @@ export const usePoeninja = createGlobalState(() => {
     } finally {
       isLoading.value = false;
     }
+  }
+
+  // Flat, iterable view of every entry in the given poe.ninja overview categories
+  // (e.g. "Expedition", "Runes") - for callers that need to search across a whole
+  // category (fuzzy/prefix matching) rather than look up one known name.
+  function getFlatPriceEntries(types: string[]): FlatPriceEntry[] {
+    const result: FlatPriceEntry[] = [];
+    for (const overview of PARSED_OVERVIEWS) {
+      if (!types.includes(overview.type)) continue;
+      result.push(...overview.lines);
+    }
+    return result;
   }
 
   function queuePricesFetch() {
@@ -455,6 +489,7 @@ export const usePoeninja = createGlobalState(() => {
     xchgRate: readonly(xchgRate),
     xchgRateCurrency: readonly(selectedCoreCurrency),
     findPriceByQuery,
+    getFlatPriceEntries,
     autoCurrency,
     queuePricesFetch,
     cachedCurrencyByQuery,
