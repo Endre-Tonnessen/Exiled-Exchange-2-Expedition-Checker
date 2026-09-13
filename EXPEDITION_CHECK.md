@@ -184,6 +184,11 @@ engine swap needs similar tuning again, `ocr-playground/` (a separate repo) is t
 place to build and validate it interactively before wiring it back into settings UI -
 that's exactly what it's for, and it's how this replacement itself was validated.
 
+**Planned but not started**: a second, user-selectable price source (poe2scout,
+24h-averaged - more stable than poe.ninja's latest-listing snapshot) - see
+[EXPEDITION_PRICE_SOURCES.md](./EXPEDITION_PRICE_SOURCES.md) for the researched
+plan, including why the obvious CORS blocker isn't actually one.
+
 ## File map
 
 ```
