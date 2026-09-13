@@ -1,32 +1,38 @@
 <template>
   <Widget :config="config" move-handles="corners" :inline-edit="false">
-    <div
-      class="widget-default-style p-2 text-gray-100 flex flex-col gap-1 text-sm"
-      style="min-width: 16rem"
-    >
-      <div v-if="!config.region" class="text-gray-500">
+    <div style="min-width: 20rem">
+      <div v-if="!config.region" class="widget-default-style p-3 text-gray-100 text-lg text-gray-500">
         {{ t(":no_region") }}
       </div>
-      <div v-else-if="rows.length === 0" class="text-gray-500">
+      <div
+        v-else-if="rows.length === 0"
+        class="widget-default-style p-3 text-gray-100 text-lg text-gray-500"
+      >
         {{ t(":no_data") }}
       </div>
-      <div
-        v-for="(row, i) in rows"
-        :key="i"
-        class="flex justify-between gap-3"
-      >
-        <span class="truncate">{{ row.quantity }}x {{ row.displayName }}</span>
-        <span
-          class="shrink-0"
-          :class="row.priceText === '?' ? 'text-gray-500' : 'text-gray-100'"
-          >{{ row.priceText }}</span
+      <!-- Sized to the same on-screen height as the capture region (regionHeightVh)
+           so each row's `top: Y%` lands next to its actual row in the game panel,
+           rather than the rows being stacked top-to-bottom in a separate list. -->
+      <div v-else :style="{ position: 'relative', height: regionHeightVh }">
+        <div
+          v-for="(row, i) in rows"
+          :key="i"
+          class="widget-default-style absolute left-0 flex justify-between gap-4 px-3 py-1.5 text-lg font-medium text-gray-100 whitespace-nowrap"
+          :style="rowStyle(row)"
         >
+          <span class="truncate">{{ row.quantity }}x {{ row.displayName }}</span>
+          <span
+            class="shrink-0"
+            :class="row.priceText === '?' ? 'text-gray-500' : 'text-gray-100'"
+            >{{ row.priceText }}</span
+          >
+        </div>
       </div>
       <div
-        v-if="config.showRawOcr && rawLines.length"
-        class="mt-1 pt-1 border-t border-gray-700 text-xs text-gray-500"
+        v-if="config.showRawOcr && rawRows.length"
+        class="widget-default-style mt-1 p-2 text-sm text-gray-500"
       >
-        <div v-for="(line, i) in rawLines" :key="i">{{ line }}</div>
+        <div v-for="(row, i) in rawRows" :key="i">{{ row.text }}</div>
       </div>
     </div>
   </Widget>
@@ -112,7 +118,29 @@ watch(
   },
 );
 
-const rawLines = shallowRef<string[]>([]);
+interface RawRow {
+  text: string;
+  /** fraction (0-1) of the capture region's height */
+  y: number;
+  /** fraction (0-1) of the capture region's height */
+  height: number;
+}
+
+const rawRows = shallowRef<RawRow[]>([]);
+
+// The rows container (template) is set to this exact height so each row's
+// `top: Y%` (in rowStyle below) lines up with that row's actual position in the
+// game panel - Y is a fraction of the *region's* height, and vh keeps that
+// consistent with how Widget.vue's own anchor positioning already works (it's
+// computed from window.innerWidth/innerHeight, not a CSS-relative ancestor).
+const regionHeightVh = computed(() => `${(props.config.region?.height ?? 0) * 100}vh`);
+
+function rowStyle(row: DisplayRow) {
+  return {
+    top: `calc(${row.y * 100}% + ${(row.height * 100) / 2}% )`,
+    transform: "translateY(-50%)",
+  };
+}
 
 // Once a scan finds real rows, keep re-scanning the same region on a timer so the
 // display can clear itself again once you close the panel - reuses the exact same
@@ -155,6 +183,9 @@ interface DisplayRow {
   quantity: number;
   displayName: string;
   priceText: string;
+  /** fraction (0-1) of the capture region's height - see rowStyle() */
+  y: number;
+  height: number;
 }
 
 // Every line that parses as a plausible reward row (parseLine already rejects the
@@ -183,14 +214,14 @@ interface DisplayRow {
 // collapsed distinct items like the five "X's Saga" recipes down to the same bare,
 // ambiguous "Saga", risking a fuzzy-match onto the wrong one. Matching against the
 // full, unedited line avoids that failure mode entirely.
-function buildRows(lines: string[]): DisplayRow[] {
+function buildRows(sourceRows: RawRow[]): DisplayRow[] {
   const priceIndex = buildPriceIndex(
     getFlatPriceEntries(EXPEDITION_PRICE_CATEGORIES),
   );
   const out: DisplayRow[] = [];
 
-  for (const raw of lines) {
-    const parsed = parseLine(raw);
+  for (const raw of sourceRows) {
+    const parsed = parseLine(raw.text);
     if (!parsed) continue;
 
     const gem = resolveGemKey(parsed.name);
@@ -201,7 +232,13 @@ function buildRows(lines: string[]): DisplayRow[] {
       const resolved = resolvePrice(lookupKey, priceIndex);
       if (resolved) priceText = formatPrice(resolved.entry.primaryValue, parsed.quantity);
     }
-    out.push({ quantity: parsed.quantity, displayName: parsed.name, priceText });
+    out.push({
+      quantity: parsed.quantity,
+      displayName: parsed.name,
+      priceText,
+      y: raw.y,
+      height: raw.height,
+    });
   }
 
   return out;
@@ -217,9 +254,12 @@ Host.onEvent("MAIN->CLIENT::ocr-text", (e) => {
   // Expresses interest right when we're about to need fresh prices, matching how
   // other widgets (e.g. item-search) drive usePoeninja()'s lazy/throttled fetch.
   queuePricesFetch();
-  rawLines.value = e.paragraphs;
+  // e.rows is only optional in the shared IPC type for the "heist-gems" target's
+  // sake (it never sends one) - main always sends it for "expedition-price".
+  const newRows = e.rows ?? e.paragraphs.map((text) => ({ text, y: 0, height: 0 }));
+  rawRows.value = newRows;
 
-  if (buildRows(e.paragraphs).length > 0) {
+  if (buildRows(newRows).length > 0) {
     emptyPollCount = 0;
     startWatching();
   } else if (pollTimer !== null && ++emptyPollCount >= CLOSE_AFTER_EMPTY_POLLS) {
@@ -227,16 +267,16 @@ Host.onEvent("MAIN->CLIENT::ocr-text", (e) => {
     // frame shouldn't clear real results) means the panel's most likely closed.
     // Same "resolves to something real" check as the display filter, so icon-glyph
     // noise that happens to parse can't keep this thinking the panel is still open.
-    rawLines.value = [];
+    rawRows.value = [];
     stopWatching();
   }
 });
 
-// Rebuilt from getFlatPriceEntries()'s current snapshot each time rawLines changes,
+// Rebuilt from getFlatPriceEntries()'s current snapshot each time rawRows changes,
 // rather than cached in its own computed - getFlatPriceEntries() reads a plain,
 // non-reactive variable inside usePoeninja(), so a separately-cached index would
 // have no reactive dependency to invalidate on and could get stuck on stale (or
-// empty, pre-fetch) data forever. Tying it to `rawLines` instead means it's rebuilt
+// empty, pre-fetch) data forever. Tying it to `rawRows` instead means it's rebuilt
 // exactly when there's new OCR output to price anyway - cheap, for ~100 entries.
-const rows = computed<DisplayRow[]>(() => buildRows(rawLines.value));
+const rows = computed<DisplayRow[]>(() => buildRows(rawRows.value));
 </script>

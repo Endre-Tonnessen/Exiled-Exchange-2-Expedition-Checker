@@ -213,6 +213,12 @@ type IpcOcrText = Event<
     pressTime: number;
     ocrTime: number;
     paragraphs: string[];
+    // Per-line vertical position within the captured region, as fractions (0-1)
+    // of the region's height. Only meaningful for target "expedition-price" -
+    // lets that widget position each price next to its actual row in the game
+    // panel instead of in a separate stacked list. Optional so "heist-gems"
+    // consumers (which only ever read `paragraphs`) don't need to change.
+    rows?: { text: string; y: number; height: number }[];
   }
 >;
 

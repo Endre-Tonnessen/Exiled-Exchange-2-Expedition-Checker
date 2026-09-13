@@ -3,10 +3,14 @@
 **This is a personal fork of [Kvan7/Exiled-Exchange-2](https://github.com/Kvan7/Exiled-Exchange-2),
 customized for my own use** — notably an added Expedition Price Check widget
 (see [EXPEDITION_CHECK.md](./EXPEDITION_CHECK.md)) that OCRs the Expedition
-"Runeshape Combinations" reward panel via Windows' native OCR. It is not the
-official project, isn't published as a release, and the badges/download-stats
-the upstream README shows don't apply here (they'd just be displaying
-upstream's numbers, not this fork's) - removed for that reason. If you're
+"Runeshape Combinations" reward panel via Windows' native OCR and shows a live
+poe.ninja price next to each reward row, right in the game window:
+
+| | |
+| --- | --- |
+| ![Expedition Price Check example 1](./docs/reference-images/ExpeditionPriceCheck1.png) | ![Expedition Price Check example 2](./docs/reference-images/ExpeditionPriceCheck2.png) |
+
+It is not the official project and isn't published as a release. If you're
 looking for the actual Exiled Exchange 2 app, go to the upstream link above.
 
 Path of Exile 2 overlay program for price checking items, among many other loved features.

@@ -373,7 +373,12 @@ export class Shortcuts {
               target,
               pressTime,
               ocrTime: result.elapsed,
-              paragraphs: result.lines,
+              paragraphs: result.lines.map((line) => line.text),
+              // Per-line vertical position (only meaningful for expedition-price,
+              // populated regardless since it costs nothing extra) - lets the
+              // renderer position each price next to its actual row in the game
+              // panel instead of in a separate stacked list.
+              rows: result.lines,
             },
           });
         })

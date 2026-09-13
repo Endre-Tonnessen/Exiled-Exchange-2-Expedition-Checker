@@ -6,13 +6,33 @@ import * as path from "path";
 import * as crypto from "crypto";
 import { cropImageFraction, FractionRect, ImageData } from "./utils";
 
+export interface ExpeditionOcrLine {
+  text: string;
+  /** top of this line's bounding box, as a fraction (0-1) of the cropped region's
+   * height - lets the renderer position a price next to this exact row instead of
+   * in a separate stacked list. */
+  y: number;
+  /** this line's bounding box height, as a fraction (0-1) of the cropped region's
+   * height. */
+  height: number;
+}
+
 export interface ExpeditionOcrResult {
   elapsed: number;
-  lines: string[];
+  lines: ExpeditionOcrLine[];
+}
+
+interface WindowsOcrWord {
+  text: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
 }
 
 interface WindowsOcrLine {
   text: string;
+  words: WindowsOcrWord[];
 }
 
 interface WindowsOcrResponse {
@@ -99,9 +119,20 @@ export async function ocrExpeditionPanel(
     // result.text (OcrResult.Text) joins every line with a space, discarding row
     // boundaries - use the per-line array instead (see ocr-playground/app.js's
     // fix for the same bug, found first there).
-    const lines = (result.lines ?? [])
-      .map((line) => normalizeQuantityPrefix(line.text.trim()))
-      .filter((line) => line.length > 0);
+    const lines: ExpeditionOcrLine[] = (result.lines ?? [])
+      .map((line) => {
+        const text = normalizeQuantityPrefix(line.text.trim());
+        // A line's own bounding box isn't exposed separately by this API - derive
+        // it from the union of its words' boxes instead.
+        const top = Math.min(...line.words.map((w) => w.y));
+        const bottom = Math.max(...line.words.map((w) => w.y + w.height));
+        return {
+          text,
+          y: top / cropped.height,
+          height: (bottom - top) / cropped.height,
+        };
+      })
+      .filter((line) => line.text.length > 0);
 
     return { elapsed: performance.now() - start, lines };
   } finally {
