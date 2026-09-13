@@ -1,6 +1,7 @@
 import child_process from 'child_process'
 import electron from 'electron'
 import esbuild from 'esbuild'
+import fs from 'fs'
 
 const isDev = !process.argv.includes('--prod')
 
@@ -24,6 +25,11 @@ const visionBuild = await esbuild.build({
   platform: 'node',
   outfile: 'dist/vision.js'
 })
+
+// Not JS - esbuild's bundler doesn't touch it, but WindowsOcr.ts locates it via
+// __dirname at runtime (same convention link-main.ts uses for vision.js above), so
+// it needs to sit next to the compiled output rather than just live in src/.
+fs.copyFileSync('src/vision/windows-ocr-recognize.ps1', 'dist/windows-ocr-recognize.ps1')
 
 const mainContext = await esbuild.context({
   entryPoints: ['src/main.ts'],

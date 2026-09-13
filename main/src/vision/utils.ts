@@ -79,3 +79,38 @@ export function timeIt(syncFn: () => void): number {
   syncFn();
   return performance.now() - startTime;
 }
+
+export interface FractionRect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+// Crops an ImageData to a rectangle given as fractions (0..1) of the image's own
+// width/height, so a calibrated region stays correct across DPI changes and window
+// resizes without any separate coordinate conversion. Clamped to the image bounds so a
+// stale calibration (e.g. after resizing the game window) degrades to a smaller/shifted
+// crop instead of throwing.
+export function cropImageFraction(
+  image: ImageData,
+  rect: FractionRect,
+): ImageData {
+  const bytesPerPixel = image.data.length / (image.width * image.height);
+
+  const x = Math.min(Math.max(Math.round(rect.x * image.width), 0), image.width - 1);
+  const y = Math.min(Math.max(Math.round(rect.y * image.height), 0), image.height - 1);
+  const width = Math.min(Math.round(rect.width * image.width), image.width - x);
+  const height = Math.min(Math.round(rect.height * image.height), image.height - y);
+
+  const out = new Uint8Array(Math.max(width, 0) * Math.max(height, 0) * bytesPerPixel);
+  for (let row = 0; row < height; row++) {
+    const srcStart = ((y + row) * image.width + x) * bytesPerPixel;
+    const destStart = row * width * bytesPerPixel;
+    out.set(
+      image.data.subarray(srcStart, srcStart + width * bytesPerPixel),
+      destStart,
+    );
+  }
+  return { width, height, data: out };
+}

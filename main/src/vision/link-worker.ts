@@ -8,6 +8,10 @@ import { ImageData } from "./utils";
 let _heistGems: HeistGemFinder;
 let _changeLangPromise = Promise.resolve();
 
+// Expedition Price Check's OCR (WindowsOcr.ts) is NOT here - unlike Heist gem
+// finding, it doesn't use the OpenCV.js/Tesseract.js WASM engine this worker
+// thread exists to isolate, so it's called directly from link-main.ts instead of
+// round-tripping through this worker for no benefit.
 const WorkerBody = {
   async init(binDir: string) {
     await Bindings.init(binDir);

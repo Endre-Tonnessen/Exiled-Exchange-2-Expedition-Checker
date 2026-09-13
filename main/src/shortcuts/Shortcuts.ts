@@ -76,6 +76,13 @@ export class Shortcuts {
       }
     });
 
+    // Continuous-polling counterpart to the hotkey-driven "ocr-text" action below -
+    // same underlying scan, just requested by the renderer on a timer instead of a
+    // global hotkey press.
+    this.server.onEventAnyClient("CLIENT->MAIN::request-ocr", (e) => {
+      this.runOcrAndReply(e.target, e.region, Date.now());
+    });
+
     uIOhook.on("keydown", (e) => {
       if (!this.logKeys) return;
       const pressed = eventToString(e);
@@ -173,6 +180,28 @@ export class Shortcuts {
         !duplicates.has(action.shortcut) ||
         action.action.type === "toggle-overlay",
     );
+
+    const expeditionActions = this.actions.filter(
+      (a) => a.action.type === "ocr-text" && a.action.target === "expedition-price",
+    );
+    this.logger.write(
+      `debug [Shortcuts] updateActions: ${this.actions.length} action(s) registered; expedition-price: ${
+        expeditionActions.length === 0
+          ? "none"
+          : expeditionActions
+              .map((a) => `"${a.shortcut}" region=${JSON.stringify((a.action as { region?: unknown }).region)}`)
+              .join(", ")
+      }`,
+    );
+    // `register()` is otherwise only called from the "active-change" listener above -
+    // if the game was already active *before* this config update (e.g. you add a
+    // widget/hotkey without ever alt-tabbing away and back), nothing would otherwise
+    // ever re-register with the OS to pick up the new action list. unregister() first
+    // so a since-removed/changed hotkey doesn't stay stuck registered to its old action.
+    if (this.poeWindow.isActive) {
+      this.unregister();
+      this.register();
+    }
   }
 
   private register() {
@@ -269,6 +298,20 @@ export class Shortcuts {
                 });
               })
               .catch(() => {});
+          } else if (
+            entry.action.type === "ocr-text" &&
+            entry.action.target === "expedition-price"
+          ) {
+            this.logger.write(
+              `debug [Shortcuts] expedition-price hotkey "${entry.shortcut}" pressed; region=${JSON.stringify(entry.action.region)}`,
+            );
+            if (!entry.action.region) {
+              this.logger.write(
+                `error [Shortcuts] expedition-price hotkey pressed but no region is set - configure a capture region in the widget's settings first.`,
+              );
+              return;
+            }
+            this.runOcrAndReply(entry.action.target, entry.action.region, Date.now());
           }
         },
       );
@@ -287,6 +330,61 @@ export class Shortcuts {
 
   private unregister() {
     globalShortcut.unregisterAll();
+  }
+
+  // Shared by the hotkey-driven "ocr-text" action and the renderer-initiated
+  // "request-ocr" event (continuous-polling widgets) - both just want a screenshot of
+  // a calibrated region OCR'd and the raw text lines sent back. Never throws: a bad
+  // frame or an out-of-range region should degrade to "no result", not crash main -
+  // but failures are logged (visible in Settings -> Debug) rather than swallowed
+  // silently, since a silent no-op is indistinguishable from "nothing was wrong".
+  private runOcrAndReply(
+    target: string,
+    region: { x: number; y: number; width: number; height: number },
+    pressTime: number,
+  ) {
+    if (process.platform !== "win32") {
+      this.logger.write(
+        `error [Shortcuts] expedition OCR requires Windows (platform: ${process.platform}).`,
+      );
+      return;
+    }
+
+    try {
+      const imageData = this.poeWindow.screenshot();
+      this.ocrWorker
+        .ocrExpeditionPanel(
+          {
+            width: this.poeWindow.bounds.width,
+            height: this.poeWindow.bounds.height,
+            data: imageData,
+          },
+          region,
+        )
+        .then((result) => {
+          if (this.logKeys) {
+            this.logger.write(
+              `debug [Shortcuts] expedition OCR (${target}): ${result.lines.length} line(s) in ${result.elapsed.toFixed(0)}ms`,
+            );
+          }
+          this.server.sendEventTo("last-active", {
+            name: "MAIN->CLIENT::ocr-text",
+            payload: {
+              target,
+              pressTime,
+              ocrTime: result.elapsed,
+              paragraphs: result.lines,
+            },
+          });
+        })
+        .catch((e) => {
+          this.logger.write(`error [Shortcuts] expedition OCR failed: ${e}`);
+        });
+    } catch (e) {
+      this.logger.write(
+        `error [Shortcuts] expedition OCR screenshot failed: ${e}`,
+      );
+    }
   }
 }
 

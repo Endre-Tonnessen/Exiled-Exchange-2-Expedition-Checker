@@ -26,7 +26,10 @@ export interface ShortcutAction {
       }
     | {
         type: "ocr-text";
-        target: "heist-gems";
+        target: "heist-gems" | "expedition-price";
+        // Capture rectangle as fractions (0..1) of the game window, only meaningful
+        // for target "expedition-price" (a user-calibrated, fixed panel location).
+        region?: { x: number; y: number; width: number; height: number };
       }
     | {
         type: "trigger-event";
@@ -82,6 +85,7 @@ export type IpcEvent =
   | IpcOverlayRenderState
   | IpcHideExclusiveWidget
   | IpcTrackArea
+  | IpcRequestOcr
   // events used by any type of Client:
   | IpcSaveConfig
   | IpcUpdaterState
@@ -139,6 +143,17 @@ type IpcTrackArea = Event<
     from: { x: number; y: number };
     area: { x: number; y: number; width: number; height: number };
     dpr: number;
+  }
+>;
+
+// Renderer-initiated, on-demand OCR request (used by continuous-polling widgets, as
+// opposed to the hotkey-driven path in `ShortcutAction`'s "ocr-text" action). The main
+// process answers with the same "MAIN->CLIENT::ocr-text" event either way.
+type IpcRequestOcr = Event<
+  "CLIENT->MAIN::request-ocr",
+  {
+    target: string;
+    region: { x: number; y: number; width: number; height: number };
   }
 >;
 
