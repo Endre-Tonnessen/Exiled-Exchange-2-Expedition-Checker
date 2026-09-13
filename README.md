@@ -37,7 +37,30 @@ The ONLY official download sites are <https://kvan7.github.io/Exiled-Exchange-2/
 
 ### Development
 
-See [DEVELOPING.md](./DEVELOPING.md)
+Two parts, run in two separate shells (both need to stay running):
+
+```shell
+# Shell 1, from the repo root
+cd renderer
+npm install
+npm run make-index-files
+npm run dev
+```
+
+```shell
+# Shell 2, from the repo root
+cd main
+npm install
+npm run dev
+```
+
+The `main` process launches the actual Electron app window once it's built - the
+`renderer` dev server needs to already be running first, since `main` loads the UI
+from it (`http://localhost:5173`) rather than from built files in this mode. Editing
+`renderer/` hot-reloads; editing `main/` rebuilds and restarts the Electron process
+automatically (which resets any in-memory app state, e.g. unsaved widget config).
+
+See [DEVELOPING.md](./DEVELOPING.md) for formatting, production builds, and releasing.
 
 ### Acknowledgments
 
