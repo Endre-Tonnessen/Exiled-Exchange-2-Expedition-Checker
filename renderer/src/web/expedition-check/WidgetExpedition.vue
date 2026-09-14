@@ -80,8 +80,17 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { shallowRef, computed, inject, watch, onUnmounted } from "vue";
+import {
+  shallowRef,
+  computed,
+  inject,
+  watch,
+  onMounted,
+  onUnmounted,
+  nextTick,
+} from "vue";
 import { useI18nNs } from "@/web/i18n";
+import { pushHostConfig } from "@/web/Config";
 import { Host } from "@/web/background/IPC";
 import { displayRounding, usePoeninja } from "@/web/background/Prices";
 import type { WidgetManager } from "../overlay/interfaces";
@@ -146,7 +155,8 @@ function positionRightOfRegion(region: {
   };
 }
 
-if (props.config.wmFlags[0] === "uninitialized") {
+const freshlyCreated = props.config.wmFlags[0] === "uninitialized";
+if (freshlyCreated) {
   props.config.mode = "hotkey";
   props.config.hotkey = "Shift + M";
   props.config.region = { ...DEFAULT_REGION };
@@ -203,6 +213,29 @@ if (
 // modeled on): the whole point of this widget is to show scan results *during*
 // normal play, i.e. exactly while the overlay is unfocused/click-through.
 props.config.wmFlags = [];
+
+// The scan hotkey is a GLOBAL shortcut, registered by main from the host config
+// (see Config.ts's "expedition-check" branch, which turns this widget's hotkey
+// and region into an "ocr-text" action). Main is only told about that config on
+// two occasions: app startup, and pressing Save in settings. Creating a widget
+// is neither - so a freshly added widget's hotkey did nothing at all until the
+// user happened to open its settings and save, which looked like the widget had
+// failed to start.
+//
+// Pushing it here is the same fix WidgetStashSearch.vue already applies for the
+// same reason, and it stays inside this widget rather than in the shared
+// creation path, so the change remains local to the fork.
+//
+// Deferred to mounted + nextTick so the assignments above are in the config
+// getConfigForHost() reads, and only for a new widget - at startup
+// OverlayWindow.vue has already pushed the same thing.
+if (freshlyCreated) {
+  onMounted(() => {
+    nextTick(() => {
+      pushHostConfig();
+    });
+  });
+}
 
 watch(
   () => props.config.region,
