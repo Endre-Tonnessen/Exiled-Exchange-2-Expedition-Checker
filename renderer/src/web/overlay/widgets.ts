@@ -86,7 +86,26 @@ export interface ExpeditionWidget extends Widget {
   mode: "hotkey" | "continuous";
   hotkey: string | null;
   region: ExpeditionCaptureRegion | null;
+  /**
+   * How often the capture region is re-scanned, in milliseconds. Drives two
+   * different things depending on `continuousScan`: how quickly the panel is
+   * noticed opening (continuous), or how quickly results clear once you close
+   * it (hotkey). The widget clamps this to a sane range at use time.
+   */
   pollIntervalMs: number;
+  /**
+   * Watch for the Runeshape Combinations panel continuously instead of waiting
+   * for the scan hotkey, so the widget shows itself when the panel opens and
+   * hides when it closes.
+   *
+   * OFF by default, and experimental: PoE2 exposes no way to ask whether the
+   * panel is open, so this works by re-scanning the capture region on a timer
+   * forever - one screenshot plus one OCR subprocess per tick, for the whole
+   * session. That is a real recurring cost, and nobody should pay it without
+   * choosing to. With this off, scanning happens only on a hotkey press (and
+   * briefly afterwards, to notice the panel closing), exactly as before.
+   */
+  continuousScan: boolean;
   /** shows the unprocessed OCR text lines alongside the parsed rows, for diagnosing
    * new/changed panels or matching issues without instrumenting code */
   showRawOcr: boolean;
@@ -98,6 +117,24 @@ export interface ExpeditionWidget extends Widget {
    * truncating, so what OCR actually recognized is always checkable - on by
    * default; turn off for a more compact widget once names aren't needed */
   uncapNameWidth: boolean;
+  /** Master switch for the succession-rune layer: which reward row carries the
+   * more valuable long-term modifier, not just the higher-priced item. OFF by
+   * default, and gated at the request itself - with this off, no detection work
+   * runs at all and the reward pricing behaves exactly as it did before this
+   * feature existed. See EXPEDITION_RUNE_PORT_PLAN.md. */
+  trackRunes: boolean;
+  /**
+   * How much rune detail to show per row.
+   * - "summary": one line per row, naming a rune only when it's worth reacting
+   *   to. The default, because it's the only mode that cannot make rows overlap
+   *   on a panel with many choices - each row stays exactly as tall as it was
+   *   before this feature existed.
+   * - "caged": one line, naming just the rune in the gilded cage (the only one
+   *   that actually propagates). Blank wherever the cage wasn't detected.
+   * - "all": every rune in the row, on a second line. The most informative and
+   *   the only mode that can overlap on a dense panel.
+   */
+  runeDisplay: "summary" | "caged" | "all";
 }
 
 export interface ImageStripWidget extends Widget {

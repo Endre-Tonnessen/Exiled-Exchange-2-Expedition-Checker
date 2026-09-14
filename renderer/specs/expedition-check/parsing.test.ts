@@ -3,6 +3,7 @@ import {
   normalize,
   parseLine,
   resolveGemKey,
+  looksLikeGemReward,
 } from "@/web/expedition-check/parsing";
 
 describe("normalize", () => {
@@ -88,5 +89,52 @@ describe("resolveGemKey", () => {
       isGemRow: true,
       key: null,
     });
+  });
+});
+
+// The panel-open discriminator. Every line below is real OCR output, produced by
+// running main's own Windows OCR bridge over the nine panel captures in
+// ocr-playground/fixtures - not invented for the test. That run is the evidence
+// the rule rests on: across all nine, every reward row carries one of the two
+// markers, and the only lines that don't are the ones noted in the second block.
+describe("looksLikeGemReward", () => {
+  it("accepts the colon-prefixed reward forms, which carry no quantity", () => {
+    for (const line of [
+      "Skill Level 20: Rain of Blades",
+      "Skill Level 20: Wardbound Minions",
+      "Skill Level 20: Explosive Transmutation",
+      "Support: Healing Runes",
+      "Spirit Level 14: Grim Feast",
+    ]) {
+      expect(looksLikeGemReward(line), line).toBe(true);
+    }
+  });
+
+  // The whole point: stray world text that drifts into the capture region parses
+  // perfectly well as a nameless, priceless row, so parseLine() alone cannot be
+  // used as evidence that the panel is open. A chest label was what actually
+  // surfaced this - it appeared as a "?" row just after the panel closed.
+  it("rejects stray world text and the panel's own furniture", () => {
+    for (const line of [
+      "Overgrown Clam",
+      "Runeshape",
+      "Saqawal's Rune of Memory",
+      "Vaal Vessel",
+      "",
+    ]) {
+      expect(looksLikeGemReward(line), line).toBe(false);
+    }
+  });
+
+  // A reward row with a quantity is caught by parseLine's explicitQuantity
+  // instead - this function only has to cover the rows that have no quantity at
+  // all, so it is not expected (or required) to match these.
+  it("leaves quantity-prefixed rows to explicitQuantity", () => {
+    expect(parseLine("3x Divine Orb")?.explicitQuantity).toBe(true);
+    expect(parseLine("1x Warding Rune of Hollowing")?.explicitQuantity).toBe(true);
+    expect(parseLine("10x Chaos Orb")?.explicitQuantity).toBe(true);
+    // ...and stray text has neither marker, which is what makes it rejectable.
+    expect(parseLine("Overgrown Clam")?.explicitQuantity).toBe(false);
+    expect(looksLikeGemReward("Overgrown Clam")).toBe(false);
   });
 });

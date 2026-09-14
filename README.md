@@ -10,6 +10,12 @@ poe.ninja price next to each reward row, right in the game window:
 | --- | --- | --- |
 | ![Expedition Price Check example 1](./docs/reference-images/ExpeditionPriceCheck1.png) | ![Expedition Price Check example 2](./docs/reference-images/ExpeditionPriceCheck2.png) | ![Expedition Price Check example 3](./docs/reference-images/ExpeditionPriceCheck3.png) |
 
+A second, **experimental** layer reads the same capture and names each row's
+runes. Selecting a row resolves two things at once: the reward, and the
+modifier its *gilded* runes propagate to the remainder of the Expedition
+chain. The panel itself indicates only the first. Off by default — see
+[Succession runes](#succession-runes-experimental).
+
 **Expedition Price Check is Windows-only** - it reads the panel via Windows'
 own OCR engine (`Windows.Media.Ocr`), which has no equivalent on other
 platforms. The rest of the app (everything from upstream Exiled Exchange 2)
@@ -49,6 +55,55 @@ step 2 above).
 | Color-code prices by rank | On | Colors each resolved price by how it ranks against the *other rows currently on screen* - highest is green, lowest is red, anything in between is yellow. This is relative to the current panel, not a fixed currency cutoff, so it keeps meaning the same thing as prices drift over a league. Example from the first screenshot above: rewards worth 4.2/4.4/8.4/1.2/12 exalted show 12 green, 1.2 red, and the other three yellow. A single resolved row (or every row tied at the same value) shows green. |
 | Show full names (uncapped width) | On | Lets the widget grow wide enough to show the full recognized name instead of truncating it, so a misread is easy to spot. Turn off for a more compact widget once you trust the matches and don't need to see the name day-to-day. |
 | Show raw OCR text (debug) | Off | Prints every unprocessed recognized line below the parsed rows - for diagnosing a new/changed panel layout or a matching problem without needing to instrument any code. |
+| Track succession runes (experimental) | **Off** | Turns on the rune layer described below. While off, no rune analysis runs at all - not "runs and hides the result" - so price checking behaves exactly as it did before the feature existed. |
+| Show (rune detail) | Only runes worth reacting to | How much rune detail each row gets. See the table in [Succession runes](#succession-runes-experimental). |
+
+## Succession runes (experimental)
+
+Only **gilded** runes propagate; the remainder of a recipe applies to that
+single pick alone. A row may carry more than one gilded rune. The display
+encodes this distinction:
+
+- **Filled marker** (red ⚠ / green ★) — a notable rune that *is* gilded, and so
+  will propagate.
+- **Dimmed marker** — a notable rune that is *not* gilded. Informational only.
+- **Gold underline** (two-line modes) — marks each gilded rune.
+
+| Display mode | Height | Purpose |
+| --- | --- | --- |
+| Only runes worth reacting to *(default)* | 1 line | Dense panels. Names a rune only when one merits attention; the sole mode that cannot overlap. Full list on hover. |
+| Gilded runes | 2 lines | The propagation decision alone. Falls back to the full list where nothing was detected as gilded. |
+| Every rune in the row | 2 lines | Whole recipes, and verifying the tool's output. Most likely to overlap. |
+
+The settings panel renders a live preview of each mode.
+
+Ratings are stored in `data/expedition/rune-ratings.json` and are intended to
+be edited; see that directory's README.
+
+### Limitations
+
+- **Ratings are opinion, not game data.** Six runes are rated from community
+  write-ups; the remainder report as *unrated* rather than being guessed at.
+  Expect drift between patches.
+- **English clients only.** Identification matches reward text against an
+  English recipe table; other locales yield `?` throughout. Border and gilding
+  detection are unaffected.
+- **Generic rewards are unidentifiable.** Many recipes produce "3x Chaos Orb",
+  so no rune can be assigned to a position. Reported as `?` — a deliberate
+  refusal, since a wrong label would misinform the pick.
+- **Gilding detection is unreliable**, and is the principal known weakness. It
+  frequently misses gilded cells, and some panels legitimately contain none, so
+  an absent underline is ambiguous. Prefer your own reading of the panel.
+- **Rows with no detected cells show no runes**, though their price still
+  resolves. Usually short rows on a dense panel.
+- **Calibrate the region tightly.** A row is recognized only where its height
+  falls between 8% and 40% of the region *width*. An over-wide region yields
+  zero rune rows while prices continue to resolve normally.
+- **Colour pipeline sensitivity.** Borders are classified by hue, so HDR, Night
+  Light/f.lux, or an aggressive monitor profile can suppress tier and gilding
+  detection. Naming is unaffected.
+- Windows-only, and subject to the same calibration as the price check, whose
+  screenshot it shares.
 
 <!-- ## Moving from POE1/Awakened PoE Trade
 

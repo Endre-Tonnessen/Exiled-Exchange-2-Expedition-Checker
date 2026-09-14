@@ -86,11 +86,16 @@ independently use the term "propagate" for this, and agree on the mechanics belo
 
 This is the min-max layer the user is scoping tooling for.
 
-- **One rune slot per Remnant is marked distinctly** — sources describe this as a
-  gold icon / gold/gilded frame around that one icon in the strip. That marked rune's
-  modifier **carries forward ("propagates") to every subsequent Remnant/monster
-  encounter in the same Expedition chain**, stacking with whatever the next Remnant's
-  own gilded rune adds.
+- **Rune slots are marked distinctly** — sources describe this as a gold icon /
+  gold/gilded frame around an icon in the strip. A marked rune's modifier **carries
+  forward ("propagates") to every subsequent Remnant/monster encounter in the same
+  Expedition chain**, stacking with whatever the next Remnant's own gilded runes add.
+- **Corrected 2026-09-14 (direct observation, supersedes the sources above):** a row
+  can carry **more than one gilded rune**. The write-ups cited here all describe it as
+  exactly one slot per Remnant, and this document previously repeated that; observing
+  real reward panels shows otherwise. Treat "one gilded rune per row" as **false** —
+  any tooling must handle a set, not a single slot. (The display layer originally
+  stored one and silently dropped the rest; see `EXPEDITION_RUNE_PORT_PLAN.md`.)
 - Consequence: **picking a reward row is a two-part decision**, not one —
   1. the immediate reward the row grants, and
   2. the modifier that row's gilded rune seeds onto **every remaining encounter in the

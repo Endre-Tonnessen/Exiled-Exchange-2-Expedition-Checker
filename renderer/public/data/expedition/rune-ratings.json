@@ -1,0 +1,60 @@
+{
+  "_description": "How GOOD each Ezomyte Runeshape is to PROPAGATE. This is a VALUE JUDGEMENT, not game data - unlike rune-icons/manifest.json (what a rune is) or rune-combinations/data.json (which runes make what), what follows is opinion and is meant to be edited. Seeded 2026-09-14 from community write-ups (see SOURCE.md for who said what and how much to trust it), because the project owner is not an expert in this mechanic - which is the whole reason the tool exists. Runes with no entry report 'unrated' rather than defaulting to neutral.",
+  "ratings": {
+    "great": "Pays the propagation slot back on every later encounter - take it over a better immediate reward.",
+    "good": "Worth propagating.",
+    "neutral": "Situational - no clear consensus either way.",
+    "poor": "Adds difficulty without adding reward.",
+    "trap": "Actively bad to propagate - avoid even when the reward looks good."
+  },
+  "_principle": "The rule every source agrees on: favour runes that PAY YOU BACK - rarity, quantity, currency, artifacts - over runes that only add difficulty. And a rune already propagating adds nothing if picked again, so a row whose highlighted rune you already carry is a wasted pick.",
+  "runes": [
+    {
+      "id": "opulent",
+      "rating": "great",
+      "why": "Increased Monster Rarity on every remaining encounter. Described as 'the most valuable rune by far' and one to 'prioritise above all else'; the classic case for taking a worse immediate reward. Route to reach it EARLY - it only pays out on encounters that come after it.",
+      "source": "mmopixel Expedition farming guide + boostmatch Remnants guide (community write-ups); tier 'gold' independently in rune-icons/manifest.json",
+      "confidence": "high - multiple independent write-ups agree and it matches the mechanic's own logic"
+    },
+    {
+      "id": "oath",
+      "rating": "trap",
+      "why": "Spawns extra waves that are immortal until cleared AND drop no loot. Propagated, that lands in every later fight in the chain: danger goes up, loot does not. The single most-flagged pick to avoid. GGG has confirmed a rework is coming, so re-check this after a patch.",
+      "source": "timesaver.gg Oath Rune guide (nerf confirmed on Raxxanterax stream, no patch notes as of 2026-07); echoed across community guides",
+      "confidence": "high - the most consistently repeated advice found"
+    },
+    {
+      "id": "life",
+      "rating": "poor",
+      "why": "Shared Life. Inflates monster health with no reward attached, and it is called out specifically as dangerous when stacked with Soul - in Expedition's high monster counts that turns into very tanky packs for nothing.",
+      "source": "community guidance flagging Life + Soul + Union of Souls as the stacking combination to be careful with",
+      "confidence": "medium - the warning is about stacking, so a single propagated Life may be milder than this implies"
+    },
+    {
+      "id": "soul",
+      "rating": "poor",
+      "why": "Union of Souls. Same family of problem as Life - monster durability up, reward flat - and the two are called out together as the stack to watch for.",
+      "source": "same community guidance as Life",
+      "confidence": "medium - same caveat, the warning is about stacking"
+    },
+    {
+      "id": "wisdom",
+      "rating": "poor",
+      "why": "Increased Experience - a reward modifier, but not one that pays in loot. Community routing advice is explicitly to SKIP Wisdom when taking it would break an Opulent chain, and that it can be worth passing on a high-slot Remnant that forces Wisdom. Worth having only when nothing better is on offer.",
+      "source": "mmopixel Expedition farming guide (routing advice)",
+      "confidence": "medium - CORRECTS an earlier guess in this file that rated Wisdom 'good' purely because experience is a reward rather than a difficulty modifier. The community view is the opposite in practice. Left as a warning about seeding ratings from first principles."
+    },
+    {
+      "id": "bond",
+      "rating": "neutral",
+      "why": "Rare monsters may transfer a modifier on death: fewer Rares overall (especially alongside Power) but each carries more modifiers per wave. More modifiers can mean better rare drops, so this cuts both ways and no source rates it outright good or bad.",
+      "source": "community description of Bond's behaviour in Remnant encounters",
+      "confidence": "low - described mechanically, not rated"
+    }
+  ],
+  "_unrated": "Every other rune - including power, death, time, rebirth, sky, ward, rage, stone, vision, volcanic, adaptive, arcane, celestial, prismatic, protective, tempest, tidal, toxic, cold, fire, lightning, electrocuting, bloodletting, cyclonic, earth, momentum, moon - has no entry on purpose. No community source found that rates them for PROPAGATION specifically, and inventing a rating risks telling you to take a trap. They display as 'unrated'.",
+  "_suggestedLadder": {
+    "note": "One player's ordering, from prior art on this panel. Recorded to react to, NOT used by any code and not verified here. Note it ranks Power 2nd, which no source found during this research supports either way - and it also ranks Oath last, which does match consensus.",
+    "order": ["opulent", "power", "rebirth", "death", "bond", "life", "soul", "time", "oath"]
+  }
+}

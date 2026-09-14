@@ -3,7 +3,8 @@ import * as Comlink from "comlink";
 import nodeEndpoint from "comlink/dist/umd/node-adapter";
 import * as Bindings from "./wasm-bindings";
 import { HeistGemFinder } from "./HeistGemFinder";
-import { ImageData } from "./utils";
+import { ImageData, FractionRect } from "./utils";
+import { detectExpeditionRunes } from "./expedition-runes/RuneDetector";
 
 let _heistGems: HeistGemFinder;
 let _changeLangPromise = Promise.resolve();
@@ -25,6 +26,17 @@ const WorkerBody = {
   async findHeistGems(screenshot: ImageData) {
     await _changeLangPromise;
     return _heistGems.ocrScreenshot(screenshot);
+  },
+  // Expedition RUNE detection does belong here, unlike the reward-text OCR
+  // above it: it uses the OpenCV.js build this worker owns. Running it on the
+  // worker thread is also what lets it overlap with the Windows OCR subprocess
+  // instead of queueing behind it, so enabling rune tracking cannot slow the
+  // existing reward pricing down.
+  //
+  // No `await _changeLangPromise` - that gate exists for Tesseract's language
+  // data, which nothing here touches.
+  async detectExpeditionRunes(screenshot: ImageData, rect: FractionRect) {
+    return detectExpeditionRunes(screenshot, rect);
   },
 };
 Comlink.expose(WorkerBody, nodeEndpoint(parentPort!));

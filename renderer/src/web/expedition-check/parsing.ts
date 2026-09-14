@@ -99,6 +99,27 @@ export function parseLine(raw: string): ParsedRow | null {
   return { quantity, name, explicitQuantity };
 }
 
+// The reward forms that carry no "Nx" quantity prefix: "Skill Level 20: Rain of
+// Blades", "Support: Healing Runes". Matched on the RAW line, before normalize()
+// strips the colon this keys on.
+//
+// Together with parseLine()'s `explicitQuantity`, this is what separates a real
+// reward row from stray text that merely happens to sit inside the capture
+// region - a chest label ("Overgrown Clam"), a monster name - which otherwise
+// parses perfectly well as a nameless, priceless row. Measured against all nine
+// real panel captures in ocr-playground/fixtures: every reward row in every one
+// of them carries one marker or the other. The only lines that don't are the
+// panel's own title (handled separately, and itself proof the panel is open),
+// second lines of a two-line row, and one single-row crop where OCR dropped the
+// quantity digit outright - none of which is a whole panel's worth of evidence.
+// So this is a test for "is the PANEL open", needing one qualifying row, and
+// never a filter on which rows get displayed.
+const GEM_REWARD_FORM = /^\s*(skill|spirit|support)\b[^:]*:/i;
+
+export function looksLikeGemReward(raw: string): boolean {
+  return GEM_REWARD_FORM.test(raw);
+}
+
 const GEM_TYPE_PATTERN = /\b(skill|spirit|support)\b/;
 const GEM_LEVEL_PATTERN = /\blevel\s+(\d+)\b/;
 
