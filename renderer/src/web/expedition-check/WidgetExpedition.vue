@@ -457,15 +457,47 @@ function currentIntervalMs(): number {
 let pollTimer: ReturnType<typeof setInterval> | null = null;
 let scanAckTimer: ReturnType<typeof setTimeout> | null = null;
 let emptyPollCount = 0;
-// Replies carry no request id, so this is how a poll's own reply is told from a
-// hotkey press's - see the ocr-text handler for why that distinction is only
-// ever used for the acknowledgement message, and therefore why an occasional
-// miscount is harmless.
-let pendingPolls = 0;
+// When the poll we are waiting on was sent, or 0 if none is outstanding.
+//
+// Serves two purposes. It is how a poll's own reply is told from a hotkey
+// press's (replies carry no request id) - used only for the acknowledgement
+// message, so getting it wrong costs one short message, never a price. And it
+// is the in-flight guard: at most ONE polled scan exists at a time.
+//
+// The guard matters because a scan is not cheap - a full game-window
+// screenshot, a PNG written to temp, and a PowerShell subprocess - and the
+// timer does not care whether the last one finished. The measured round trip
+// is ~300ms against a 700ms active interval, so normally there is headroom;
+// but under load (a 4K screenshot, antivirus inspecting the temp file, the
+// game busy) a slow scan would have the next tick pile a SECOND subprocess on
+// top, making the backlog worse exactly when the machine is least able to
+// absorb it. Skipping the tick instead degrades to a slower refresh, which is
+// the right way to lose.
+let pollSentAt = 0;
+
+// Long enough that it never trips on a merely slow scan, short enough that a
+// stall is invisible in play. It exists because a reply can be lost outright:
+// main logs a screenshot or OCR failure and returns without replying. Without
+// this the guard would latch and polling would stop for good - a far worse
+// failure than the occasional overlap it is there to prevent.
+const POLL_TIMEOUT_MS = 5000;
+
+function pollInFlight(): boolean {
+  if (pollSentAt === 0) return false;
+  if (Date.now() - pollSentAt > POLL_TIMEOUT_MS) {
+    pollSentAt = 0;
+    return false;
+  }
+  return true;
+}
 
 function requestScan() {
   if (!props.config.region) return;
-  pendingPolls++;
+  // Skip this tick rather than queue behind the outstanding scan. Only polling
+  // is throttled: a hotkey press is handled entirely in main and never reaches
+  // here, so a deliberate keypress always gets a scan.
+  if (pollInFlight()) return;
+  pollSentAt = Date.now();
   Host.sendEvent({
     name: "CLIENT->MAIN::request-ocr",
     payload: {
@@ -483,7 +515,8 @@ function stopWatching() {
     clearInterval(pollTimer);
     pollTimer = null;
   }
-  pendingPolls = 0;
+  // Any reply still in flight is for a scan nobody is waiting on now.
+  pollSentAt = 0;
 }
 
 /** Whether the timer should be running right now, given mode and state. */
@@ -731,12 +764,17 @@ Host.onEvent("MAIN->CLIENT::ocr-text", (e) => {
   const newRows = e.rows ?? e.paragraphs.map((text) => ({ text, y: 0, height: 0 }));
 
   // Whose reply is this - our poll's, or a hotkey press's? Main sends no
-  // request id to match on, so this counter is the only available answer. It is
-  // used for exactly one thing: deciding whether to acknowledge a fruitless
-  // MANUAL scan. A miscount (possible if main drops a reply after an OCR
-  // error) therefore costs at most one 2-second message, never a wrong price.
-  const fromPoll = pendingPolls > 0;
-  if (fromPoll) pendingPolls--;
+  // request id to match on, so an outstanding poll is the only available
+  // answer, and it is used for exactly one thing: deciding whether to
+  // acknowledge a fruitless MANUAL scan. Getting it wrong costs one 2-second
+  // message, never a wrong price.
+  //
+  // Cleared unconditionally, and before the `skipped` return below: a hotkey
+  // reply arriving while a poll is outstanding will clear the guard early, at
+  // worst allowing one extra overlapping scan. Latching it would stop polling
+  // altogether, so this errs in the direction that self-corrects.
+  const fromPoll = pollSentAt !== 0;
+  pollSentAt = 0;
 
   // Main answered without looking (the game wasn't in the foreground). That is
   // NOT evidence the panel closed, so nothing here may change state - in

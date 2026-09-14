@@ -52,11 +52,50 @@ step 2 above).
 | --- | --- | --- |
 | Hotkey | `Shift + M` | Triggers a single scan of the calibrated region. |
 | Region (drag the green box, or type exact x/y/width/height fractions) | calibrated per-user | The area that gets OCR'd on each scan - see step 3 above. |
+| Watch for the panel automatically (experimental) | **Off** | Shows the widget on its own whenever the Combinations panel opens, with no keypress. Costs a scan every interval for as long as the game is running - see [Performance](#performance-and-the-ocr-flow) before turning it on. |
+| Scan every (seconds) | 3 | With automatic watching on, how often the region is checked for the panel opening. With it off, how often results refresh while the panel is open. Clamped to 1-30s. |
 | Color-code prices by rank | On | Colors each resolved price by how it ranks against the *other rows currently on screen* - highest is green, lowest is red, anything in between is yellow. This is relative to the current panel, not a fixed currency cutoff, so it keeps meaning the same thing as prices drift over a league. Example from the first screenshot above: rewards worth 4.2/4.4/8.4/1.2/12 exalted show 12 green, 1.2 red, and the other three yellow. A single resolved row (or every row tied at the same value) shows green. |
 | Show full names (uncapped width) | On | Lets the widget grow wide enough to show the full recognized name instead of truncating it, so a misread is easy to spot. Turn off for a more compact widget once you trust the matches and don't need to see the name day-to-day. |
 | Show raw OCR text (debug) | Off | Prints every unprocessed recognized line below the parsed rows - for diagnosing a new/changed panel layout or a matching problem without needing to instrument any code. |
 | Track succession runes (experimental) | **Off** | Turns on the rune layer described below. While off, no rune analysis runs at all - not "runs and hides the result" - so price checking behaves exactly as it did before the feature existed. |
 | Show (rune detail) | Only runes worth reacting to | How much rune detail each row gets. See the table in [Succession runes](#succession-runes-experimental). |
+
+### Performance and the OCR flow
+
+Scanning is not free, so it is worth knowing exactly when it runs.
+
+**One scan** = a full game-window screenshot → crop to your region → encode a
+PNG to the temp directory → spawn a PowerShell subprocess → `Windows.Media.Ocr`.
+Measured at roughly **300 ms wall time, of which only ~18 ms is the OCR engine
+itself**; the rest is process startup and marshalling. Note the screenshot is of
+the whole window regardless of how small your region is.
+
+**With automatic watching off (the default):**
+
+| When | What runs |
+| --- | --- |
+| Idle - playing, panel closed | **Nothing.** No timer exists, so no screenshots and no subprocesses. |
+| You press the hotkey | One scan. |
+| Panel open | One scan every 700 ms, so prices and runes stay current. |
+| You close the panel | Two more scans confirm it is gone (~1.5-2 s), then scanning **stops completely**. |
+
+**With automatic watching on**, the timer instead runs for the whole session:
+one scan per interval while the panel is closed, 700 ms while it is open. When
+the game is not the foreground window the request is answered without taking a
+screenshot or running OCR at all, so being alt-tabbed costs nothing beyond an
+idle timer.
+
+Two further details:
+
+- **Only one scan is ever in flight.** If a scan has not answered by the next
+  tick, that tick is skipped rather than starting a second subprocess, so a slow
+  machine degrades to a slower refresh instead of accumulating a backlog.
+- **Rune tracking adds work per scan** (image analysis on the vision worker
+  thread) and only when it is switched on.
+
+If you want lower idle cost than the default, there is nothing to tune - it is
+already zero. If automatic watching is on and you want it cheaper, raise the
+scan interval.
 
 ## Succession runes (experimental)
 
