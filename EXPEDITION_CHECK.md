@@ -187,7 +187,11 @@ that's exactly what it's for, and it's how this replacement itself was validated
 **Planned but not started**: a second, user-selectable price source (poe2scout,
 24h-averaged - more stable than poe.ninja's latest-listing snapshot) - see
 [EXPEDITION_PRICE_SOURCES.md](./EXPEDITION_PRICE_SOURCES.md) for the researched
-plan, including why the obvious CORS blocker isn't actually one.
+plan, including why the obvious CORS blocker isn't actually one. Also speculative:
+tracking the gilded/succession-rune layer of the Combinations panel (which reward
+row carries the more valuable long-term modifier, not just the higher-priced item)
+- see [EXPEDITION_RUNE_TRACKING.md](./EXPEDITION_RUNE_TRACKING.md) for the scoped
+feature proposal, entirely unbuilt.
 
 ## File map
 
