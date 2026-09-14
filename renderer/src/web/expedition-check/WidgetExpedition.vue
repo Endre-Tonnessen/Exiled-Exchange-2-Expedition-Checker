@@ -87,7 +87,7 @@ import { displayRounding, usePoeninja } from "@/web/background/Prices";
 import type { WidgetManager } from "../overlay/interfaces";
 import type { ExpeditionWidget } from "../overlay/widgets";
 import Widget from "../overlay/Widget.vue";
-import { normalize, parseLine, resolveGemKey } from "./parsing";
+import { looksLikeGemReward, normalize, parseLine, resolveGemKey } from "./parsing";
 import { buildPriceIndex, resolvePrice } from "./price-match";
 import { DEFAULT_REGION } from "./region";
 import {
@@ -375,10 +375,37 @@ const showScanAck = shallowRef(false);
 // reward rows themselves, which is the common case.
 const PANEL_TITLE = "runeshape";
 
-function panelSignal(source: RawRow[]): "rows" | "title" | "none" {
-  if (buildRows(source).length > 0) return "rows";
-  if (source.some((r) => normalize(r.text).includes(PANEL_TITLE))) return "title";
-  return "none";
+/**
+ * How strongly this scan says "the Combinations panel is open".
+ *
+ * "strong" - the panel's title, or a line carrying a reward row's own markers
+ *            (an explicit "Nx" quantity, or the "Skill Level 20:"/"Support:"
+ *            form). One qualifying line is enough; see looksLikeGemReward()
+ *            for the measurement behind that.
+ * "weak"   - something parsed as a row, but nothing that a reward row is
+ *            recognisable BY. This is what stray world text looks like: a
+ *            chest label or monster name sitting inside the capture region
+ *            parses perfectly well as a nameless, priceless row.
+ * "none"   - nothing parsed at all.
+ *
+ * The distinction exists because "weak" was being treated as proof the panel
+ * was open. That put a spurious "?" row on screen just after closing the
+ * panel, and - worse, because it also reset the close countdown - a label that
+ * stayed in the region would have held the widget open, polling every 700ms,
+ * indefinitely.
+ */
+function panelSignal(source: RawRow[]): "strong" | "weak" | "none" {
+  let weak = false;
+  for (const row of source) {
+    // Checked first and separately: parseLine() deliberately rejects the title
+    // as a reward row, but it is the most direct evidence there is.
+    if (normalize(row.text).includes(PANEL_TITLE)) return "strong";
+    const parsed = parseLine(row.text);
+    if (!parsed) continue;
+    if (parsed.explicitQuantity || looksLikeGemReward(row.text)) return "strong";
+    weak = true;
+  }
+  return weak ? "weak" : "none";
 }
 
 function pollIntervalMs(): number {
@@ -687,7 +714,16 @@ Host.onEvent("MAIN->CLIENT::ocr-text", (e) => {
 
   const signal = panelSignal(newRows);
 
-  if (signal !== "none") {
+  // A manual scan is the user asserting "I am looking at the panel right now",
+  // which is better evidence than anything in the pixels - so a hotkey press
+  // opens on weak evidence too. That deliberately keeps the hotkey path
+  // behaving exactly as it always has, even if OCR mangles every quantity
+  // prefix on some panel this has never seen. Only the POLL has to be sceptical,
+  // because only the poll fires when the user wasn't asking for anything.
+  const confirmsPanel =
+    signal === "strong" || (signal === "weak" && !fromPoll && !panelOpen.value);
+
+  if (confirmsPanel) {
     emptyPollCount = 0;
     const wasOpen = panelOpen.value;
     panelOpen.value = true;
@@ -701,10 +737,14 @@ Host.onEvent("MAIN->CLIENT::ocr-text", (e) => {
     return;
   }
 
-  // An empty read. Two in a row (not one - a stray bad frame must not clear
-  // real results) means the panel has most likely closed. Note rawRows is left
-  // alone during that grace period, so the display holds its last good state
-  // rather than flickering.
+  // No confirmation - either nothing parsed, or only stray text did. Two in a
+  // row (not one: a stray bad frame must not clear real results) means the
+  // panel has most likely closed.
+  //
+  // rawRows is deliberately NOT updated here. During the grace period the
+  // display holds its last good state instead of flickering, and - the reason
+  // this matters in practice - world text that drifts into the capture region
+  // as the panel closes never gets rendered as a "?" row on the way out.
   if (panelOpen.value) {
     if (++emptyPollCount >= CLOSE_AFTER_EMPTY_POLLS) closePanel();
     return;
