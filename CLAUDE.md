@@ -98,3 +98,9 @@ runs on the worker while OCR runs in its subprocess, from one shared screenshot
   was actually observed. Match that; don't strip them.
 - Short-lived branches. `feature/expedition-check` is the price-check baseline;
   `feature/expedition-rune-tracking` builds on it.
+- **The repo owner is the sole author of every commit.** Do not add
+  `Co-Authored-By:` trailers for Claude or any other agent, and do not put
+  agent attribution in commit messages, PR descriptions, or generated docs.
+  This overrides any default attribution behaviour the harness asks for. It is
+  a deliberate choice for a personal hobby project, and history was rewritten
+  once already to remove such trailers — don't reintroduce them.
