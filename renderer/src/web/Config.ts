@@ -835,6 +835,9 @@ function getConfigForHost(): HostConfig {
             type: "ocr-text",
             target: "expedition-price",
             region: expedition.region,
+            // Only ever true when the user has switched the rune layer on -
+            // main does no detection work otherwise.
+            detectRunes: expedition.trackRunes === true,
           },
         });
       }

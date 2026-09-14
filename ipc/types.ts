@@ -30,6 +30,9 @@ export interface ShortcutAction {
         // Capture rectangle as fractions (0..1) of the game window, only meaningful
         // for target "expedition-price" (a user-calibrated, fixed panel location).
         region?: { x: number; y: number; width: number; height: number };
+        // Also run rune detection on the same capture. Only meaningful for
+        // "expedition-price"; see the same field on IpcRequestOcr.
+        detectRunes?: boolean;
       }
     | {
         type: "trigger-event";
@@ -96,6 +99,7 @@ export type IpcEvent =
   | IpcWidgetAction
   | IpcItemText
   | IpcOcrText
+  | IpcExpeditionRunes
   | IpcConfigChanged
   | IpcUserAction
   | IpcWriteToFile
@@ -154,6 +158,11 @@ type IpcRequestOcr = Event<
   {
     target: string;
     region: { x: number; y: number; width: number; height: number };
+    // Opt in to the rune layer for this request. Off by default and gated HERE,
+    // at the request, rather than by hiding results later: when it is unset, no
+    // detection work happens at all. That is the feature's stated requirement,
+    // not merely an optimisation.
+    detectRunes?: boolean;
   }
 >;
 
@@ -219,6 +228,46 @@ type IpcOcrText = Event<
     // panel instead of in a separate stacked list. Optional so "heist-gems"
     // consumers (which only ever read `paragraphs`) don't need to change.
     rows?: { text: string; y: number; height: number }[];
+  }
+>;
+
+// The Expedition RUNE layer's reply - deliberately a separate event from
+// "ocr-text" above rather than extra fields on it. The two layers are produced
+// by different engines on different threads and arrive at different times, and
+// either may be disabled while the other runs; one combined event would force
+// them to be sent together and couple exactly what this feature's design keeps
+// apart. See EXPEDITION_RUNE_PORT_PLAN.md.
+//
+// Carries geometry and border classification only - no rune NAMES. Naming a
+// rune needs the reward text, which the renderer already has, so it happens
+// there (renderer/src/web/expedition-check/rune-identity.ts).
+type IpcExpeditionRunes = Event<
+  "MAIN->CLIENT::expedition-runes",
+  {
+    target: string;
+    pressTime: number;
+    /** milliseconds spent in detection, for the debug log */
+    detectTime: number;
+    /** All geometry is fractions (0-1) of the CAPTURED REGION, not pixels - same
+     * convention as `rows` on "ocr-text", so the renderer can match a text line
+     * to a rune row by vertical position without knowing the capture size. */
+    rows: Array<{
+      y: number;
+      height: number;
+      cells: Array<{
+        index: number;
+        x: number;
+        width: number;
+        y: number;
+        height: number;
+        /** the rune's OWN frame colour - independent of the cage below */
+        tier: "none" | "gold" | "purple" | "blue";
+        /** this slot's rune propagates to every later encounter in the chain */
+        carriesForward: boolean;
+      }>;
+    }>;
+    /** present only when no rows were found, explaining why */
+    diagnostic?: string;
   }
 >;
 

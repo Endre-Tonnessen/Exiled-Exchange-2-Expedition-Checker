@@ -49,4 +49,14 @@ export class OcrWorker {
   async ocrExpeditionPanel(image: ImageData, rect: FractionRect) {
     return await WindowsOcr.ocrExpeditionPanel(image, rect);
   }
+
+  // The rune layer DOES go through the worker - it needs that OpenCV build.
+  //
+  // Note it does NOT transfer the image buffer (no Comlink.transfer, unlike
+  // findHeistGems): the same screenshot is handed to ocrExpeditionPanel on the
+  // main thread at the same moment, and transferring would detach the buffer
+  // out from under it. Copying a frame is the cheaper mistake to make here.
+  async detectExpeditionRunes(image: ImageData, rect: FractionRect) {
+    return await this.api.detectExpeditionRunes(image, rect);
+  }
 }

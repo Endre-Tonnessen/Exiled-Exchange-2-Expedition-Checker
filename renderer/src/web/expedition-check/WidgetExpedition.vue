@@ -14,21 +14,17 @@
            so each row's `top: Y%` lands next to its actual row in the game panel,
            rather than the rows being stacked top-to-bottom in a separate list. -->
       <div v-else :style="{ position: 'relative', height: regionHeightVh }">
-        <!-- Price first and never truncated (the primary information at a glance);
-             name second, smaller/muted and free to truncate - it's only there for
-             the edge case of checking what OCR actually recognized, not something
-             read during normal play. Price-first also means every price starts at
-             the same left-aligned X by construction, so - unlike the previous
-             price-on-the-right layout - no width computation is needed just to
-             keep them lined up. -->
         <div
           v-for="(row, i) in rows"
           :key="i"
-          class="widget-default-style absolute left-0 w-full flex items-baseline gap-2 px-3 py-1.5 whitespace-nowrap"
+          class="widget-default-style absolute left-0 w-full px-3 py-1.5 whitespace-nowrap"
           :style="rowStyle(row)"
         >
-          <span class="shrink-0 text-lg font-semibold" :class="priceColorClass(row)">{{ row.priceText }}</span>
-          <span class="truncate min-w-0 text-sm text-gray-500">{{ row.quantity }}x {{ row.displayName }}</span>
+          <ExpeditionRow
+            :row="row"
+            :mode="config.runeDisplay"
+            :price-class="priceColorClass(row)"
+          />
         </div>
       </div>
       <div
@@ -64,6 +60,16 @@ import Widget from "../overlay/Widget.vue";
 import { parseLine, resolveGemKey } from "./parsing";
 import { buildPriceIndex, resolvePrice } from "./price-match";
 import { DEFAULT_REGION } from "./region";
+import {
+  loadCombinationTable,
+  loadRuneRatings,
+  resolveRowRunes,
+  type CombinationTable,
+  type RuneRatingsFile,
+  type ResolvedRune,
+} from "./rune-value";
+import ExpeditionRow from "./ExpeditionRow.vue";
+import { rowHighlights, markerText } from "./rune-display";
 
 // Only the categories that can actually appear as Runeshape Combinations costs -
 // matches a prior tool's curated list, avoiding false fuzzy matches
@@ -109,6 +115,8 @@ if (props.config.wmFlags[0] === "uninitialized") {
   props.config.showRawOcr = false;
   props.config.colorCodeValues = true;
   props.config.uncapNameWidth = true;
+  props.config.trackRunes = false;
+  props.config.runeDisplay = "summary";
   wm.show(props.config.wmId);
 }
 // Backfill for a widget saved before these existed - strict undefined checks,
@@ -118,6 +126,16 @@ if (props.config.colorCodeValues === undefined) {
 }
 if (props.config.uncapNameWidth === undefined) {
   props.config.uncapNameWidth = true;
+}
+// Rune tracking defaults OFF, including for existing widgets: it is a new,
+// second layer on top of pricing that already works, and an upgrade should not
+// silently start doing extra per-frame image analysis for someone who never
+// asked for it.
+if (props.config.trackRunes === undefined) {
+  props.config.trackRunes = false;
+}
+if (props.config.runeDisplay === undefined) {
+  props.config.runeDisplay = "summary";
 }
 // No "invisible-on-blur" here (unlike e.g. Stopwatch, which this was originally
 // modeled on): the whole point of this widget is to show scan results *during*
@@ -141,6 +159,57 @@ interface RawRow {
 
 const rawRows = shallowRef<RawRow[]>([]);
 
+// --- Rune layer (independent of everything above) -------------------------
+// Arrives on its own IPC event, at its own time, and may be absent entirely
+// while the price rows above work perfectly well. Nothing in the pricing path
+// reads any of this.
+
+interface RuneCell {
+  index: number;
+  x: number;
+  width: number;
+  y: number;
+  height: number;
+  tier: "none" | "gold" | "purple" | "blue";
+  carriesForward: boolean;
+}
+
+interface RuneRow {
+  y: number;
+  height: number;
+  cells: RuneCell[];
+}
+
+const runeRows = shallowRef<RuneRow[]>([]);
+const comboTable = shallowRef<CombinationTable | null>(null);
+const runeRatings = shallowRef<RuneRatingsFile | null>(null);
+
+// Fetched once, and only if the user has the layer switched on - no reason to
+// pull ~48KB of recipe data for someone who never enables it. Re-checked on
+// toggle rather than at startup.
+let runeDataRequested = false;
+function ensureRuneData() {
+  if (runeDataRequested) return;
+  runeDataRequested = true;
+  loadCombinationTable().then((t) => {
+    comboTable.value = t;
+  });
+  loadRuneRatings().then((r) => {
+    runeRatings.value = r;
+  });
+}
+watch(
+  () => props.config.trackRunes,
+  (on) => {
+    if (on) ensureRuneData();
+    // Clear stale rune results the moment the layer is switched off, so the
+    // display cannot keep showing hints derived from a scan that is no longer
+    // running.
+    else runeRows.value = [];
+  },
+  { immediate: true },
+);
+
 // The rows container (template) is set to this exact height so each row's
 // `top: Y%` (in rowStyle below) lines up with that row's actual position in the
 // game panel - Y is a fraction of the *region's* height, and vh keeps that
@@ -156,7 +225,16 @@ const regionHeightVh = computed(() => `${(props.config.region?.height ?? 0) * 10
 const containerWidth = computed(() => {
   if (!props.config.uncapNameWidth) return "16rem";
   const longest = rows.value.reduce((max, r) => {
-    const len = `${r.quantity}x ${r.displayName}`.length + r.priceText.length;
+    // The inline rune markers share the price line, so they have to be counted
+    // or they wrap - which would silently undo the whole point of the one-line
+    // summary mode by making rows two lines tall again anyway. Plural: a row
+    // can carry more than one gilded rune.
+    const markerLen = rowHighlights(r.runes).reduce(
+      (n, rune) => n + markerText(rune).length + 1,
+      0,
+    );
+    const len =
+      `${r.quantity}x ${r.displayName}`.length + r.priceText.length + markerLen;
     return Math.max(max, len);
   }, 20);
   return `${longest + 6}ch`;
@@ -199,6 +277,9 @@ function startWatching() {
       payload: {
         target: "expedition-price",
         region: props.config.region,
+        // Read fresh each poll, so toggling the setting takes effect on the
+        // very next scan rather than needing the widget rebuilt.
+        detectRunes: props.config.trackRunes === true,
       },
     });
   }, POLL_INTERVAL_MS);
@@ -222,6 +303,13 @@ interface DisplayRow {
    * row is never colored regardless of this or the colorCodeValues setting).
    * See buildRows() for how ties are handled. */
   valueTier: "high" | "mid" | "low" | null;
+  /** Every rune in this row, named where possible - empty when the rune layer
+   * is off, or when no detected rune row lined up with this text line.
+   *
+   * Gilding is a property of each rune (`carriesForward`), NOT a single "the
+   * caged one" field: a row can carry more than one gilded rune. An earlier
+   * version stored one here and silently dropped the rest. */
+  runes: ResolvedRune[];
 }
 
 // Every line that parses as a plausible reward row (parseLine already rejects the
@@ -272,6 +360,7 @@ function buildRows(sourceRows: RawRow[]): DisplayRow[] {
         priceText = formatPrice(resolved.entry.primaryValue, parsed.quantity);
       }
     }
+    const runes = runesForTextRow(raw);
     out.push({
       quantity: parsed.quantity,
       displayName: parsed.name,
@@ -280,11 +369,37 @@ function buildRows(sourceRows: RawRow[]): DisplayRow[] {
       height: raw.height,
       totalValue,
       valueTier: null, // filled in below, once every row's totalValue is known
+      runes,
+
     });
   }
 
   assignValueTiers(out);
   return out;
+}
+
+// Pairs an OCR text line with the detected rune row it belongs to.
+//
+// The two layers never talk to each other in main, so they are joined here, by
+// vertical position - both report y/height as fractions of the SAME captured
+// region, which is what makes this possible without either side knowing about
+// the other. A text line belongs to the rune row whose band contains its
+// centre; anything that matches nothing simply gets no runes, which is the
+// correct outcome when only one layer produced a result for that row.
+//
+// Identity is then resolved from the row's RAW text (not the price-matching
+// `parsed.name`, which has been stripped for a different purpose) against the
+// recipe table - see rune-identity.ts.
+function runesForTextRow(raw: RawRow): ResolvedRune[] {
+  if (!props.config.trackRunes) return [];
+  const table = comboTable.value;
+  if (!table) return []; // data still loading
+  const centre = raw.y + raw.height / 2;
+  const match = runeRows.value.find(
+    (r) => centre >= r.y && centre <= r.y + r.height && r.cells.length > 0,
+  );
+  if (!match) return [];
+  return resolveRowRunes(table, runeRatings.value, raw.text, match.cells);
 }
 
 // Ranks by total value among this poll's own resolved rows - relative, not an
@@ -327,6 +442,7 @@ function priceColorClass(row: DisplayRow): string {
   return "text-gray-100";
 }
 
+
 Host.onEvent("MAIN->CLIENT::ocr-text", (e) => {
   if (e.target !== "expedition-price") return;
   // Expresses interest right when we're about to need fresh prices, matching how
@@ -348,6 +464,14 @@ Host.onEvent("MAIN->CLIENT::ocr-text", (e) => {
     rawRows.value = [];
     stopWatching();
   }
+});
+
+Host.onEvent("MAIN->CLIENT::expedition-runes", (e) => {
+  if (e.target !== "expedition-price") return;
+  // A late reply arriving after the layer was switched off must not repopulate
+  // the display - the request that produced it was already in flight.
+  if (!props.config.trackRunes) return;
+  runeRows.value = e.rows;
 });
 
 // Rebuilt from getFlatPriceEntries()'s current snapshot each time rawRows changes,

@@ -55,6 +55,46 @@
     <UiCheckbox v-model="showRawOcr">{{ t(":show_raw_ocr") }}</UiCheckbox>
     <UiCheckbox v-model="colorCodeValues">{{ t(":color_code_values") }}</UiCheckbox>
     <UiCheckbox v-model="uncapNameWidth">{{ t(":uncap_name_width") }}</UiCheckbox>
+
+    <!-- The rune layer is its own section, not another checkbox in the list
+         above: it is a separate feature that happens to share this capture,
+         and the settings should say so. Off leaves the price checking exactly
+         as it was. -->
+    <div class="border-t border-gray-700 pt-3 flex flex-col gap-2">
+      <UiCheckbox v-model="trackRunes">{{ t(":track_runes") }}</UiCheckbox>
+      <div class="text-gray-500 text-xs">{{ t(":track_runes_notice") }}</div>
+
+      <div v-if="trackRunes" class="flex flex-col gap-1">
+        <div class="text-xs text-gray-500">{{ t(":rune_display") }}</div>
+        <select v-model="runeDisplay" class="bg-gray-900 rounded px-1 py-0.5 text-sm">
+          <option value="summary">{{ t(":rune_display_summary") }}</option>
+          <option value="caged">{{ t(":rune_display_caged") }}</option>
+          <option value="all">{{ t(":rune_display_all") }}</option>
+        </select>
+
+        <!-- Rendered by ExpeditionRow, the same component the widget itself
+             uses, against fixed sample rows - so what's previewed here cannot
+             drift from what actually appears in game. Only the data is fake. -->
+        <div class="mt-1 rounded bg-gray-900 p-2 flex flex-col gap-2">
+          <div class="text-xs text-gray-500">{{ t(":rune_preview") }}</div>
+          <div
+            v-for="(sample, i) in PREVIEW_ROWS"
+            :key="i"
+            class="whitespace-nowrap overflow-x-auto"
+          >
+            <ExpeditionRow
+              :row="sample.row"
+              :mode="runeDisplay"
+              :price-class="sample.priceClass"
+            />
+          </div>
+          <div class="text-gray-500 text-xs">{{ t(":rune_preview_legend") }}</div>
+        </div>
+
+        <div class="text-gray-500 text-xs">{{ t(":rune_display_notice") }}</div>
+        <div class="text-gray-500 text-xs">{{ t(":rune_ratings_notice") }}</div>
+      </div>
+    </div>
   </div>
 
   <!-- Teleported to <body>: needs to sit over the actual game, not inside the
@@ -104,6 +144,9 @@ import { DEFAULT_REGION } from "./region";
 
 import HotkeysGeneric, { HotkeySchema } from "../settings/HotkeysGeneric.vue";
 import UiCheckbox from "../ui/UiCheckbox.vue";
+import ExpeditionRow from "./ExpeditionRow.vue";
+import type { ResolvedRune } from "./rune-value";
+import type { ExpeditionRowData } from "./rune-display";
 
 const props = defineProps(configProp<ExpeditionWidget>());
 const { t } = useI18nNs("expedition_check");
@@ -141,6 +184,71 @@ const regionHeight = regionField("height");
 const showRawOcr = configModelValue(() => props.configWidget, "showRawOcr");
 const colorCodeValues = configModelValue(() => props.configWidget, "colorCodeValues");
 const uncapNameWidth = configModelValue(() => props.configWidget, "uncapNameWidth");
+const trackRunes = configModelValue(() => props.configWidget, "trackRunes");
+const runeDisplay = configModelValue(() => props.configWidget, "runeDisplay");
+
+// Sample rows for the live preview above. Built from real captures so the
+// preview shows situations that actually occur, and chosen to cover the three
+// cases that are easy to confuse:
+//   1. a gilded great rune  -> loudest positive signal
+//   2. a gilded trap        -> loudest negative signal, and note it carries a
+//                              SECOND gilded rune: a row can have more than one
+//   3. a great rune that is NOT gilded -> dimmed, because it will not propagate
+// Only the data is fake; the rendering is the widget's own component.
+function rune(
+  index: number,
+  runeId: string | null,
+  rating: ResolvedRune["rating"],
+  carriesForward = false,
+): ResolvedRune {
+  return { index, runeId, rating, why: null, carriesForward, tier: "none" };
+}
+
+const PREVIEW_ROWS: Array<{ row: ExpeditionRowData; priceClass: string }> = [
+  {
+    priceClass: "text-red-400",
+    row: {
+      quantity: 1,
+      displayName: "ancient rune of witchcraft",
+      priceText: "3.8 exalted",
+      runes: [
+        rune(0, "arcane", "unrated"),
+        rune(1, "bloodletting", "unrated"),
+        rune(2, "celestial", "unrated"),
+        rune(3, "opulent", "great", true),
+      ],
+    },
+  },
+  {
+    priceClass: "text-green-400",
+    row: {
+      quantity: 1,
+      displayName: "rune of wisdom",
+      priceText: "51 exalted",
+      runes: [
+        rune(0, "time", "unrated"),
+        rune(1, "ward", "unrated"),
+        rune(2, "wisdom", "poor", true),
+        rune(3, "sky", "unrated"),
+        rune(4, "oath", "trap", true),
+      ],
+    },
+  },
+  {
+    priceClass: "text-yellow-400",
+    row: {
+      quantity: 1,
+      displayName: "rune of reach",
+      priceText: "13 exalted",
+      runes: [
+        rune(0, "arcane", "unrated"),
+        rune(1, "momentum", "unrated"),
+        rune(2, "opulent", "great"),
+        rune(3, "vision", "unrated"),
+      ],
+    },
+  },
+];
 
 // Percentages resolve against the fixed-positioned element's viewport directly, so no
 // pixel math against window.innerWidth/innerHeight is needed here.

@@ -292,7 +292,17 @@
     "region_notice": "Drag the green box (shown over the game while this is open) to position it, or enter exact fractions of the game window below. Click Save when done.",
     "show_raw_ocr": "Show raw OCR text (debug)",
     "color_code_values": "Color-code prices by rank (green = highest, red = lowest)",
-    "uncap_name_width": "Show full names (uncapped width, for debugging misreads)"
+    "uncap_name_width": "Show full names (uncapped width, for debugging misreads)",
+    "track_runes": "Track succession runes (experimental)",
+    "track_runes_notice": "Names the runes on each reward row and flags which ones are worth propagating, so you can weigh a better reward now against a better rune for the rest of the chain. Leaves price checking completely unchanged - with this off, no rune analysis runs at all.",
+    "rune_display": "Show",
+    "rune_display_summary": "Only runes worth reacting to (one line)",
+    "rune_display_caged": "The propagating (gilded) rune",
+    "rune_display_all": "Every rune in the row (two lines)",
+    "rune_display_notice": "Only gilded runes propagate, so they get the loud marker; a notable rune elsewhere in the row is shown dimmed. The two-line modes are more informative but can overlap on a panel with many choices.",
+    "rune_preview": "Preview (sample data):",
+    "rune_preview_legend": "Row 1: a gilded great rune. Row 2: a gilded trap, alongside a second gilded rune - a row can have more than one. Row 3: a great rune that is NOT gilded, so it won't propagate and is dimmed.",
+    "rune_ratings_notice": "Ratings are opinion, not game data, and most runes are deliberately unrated. Edit data/expedition/rune-ratings.json to change them."
   },
   "notepad": {
     "name": "Notepad",

@@ -98,6 +98,24 @@ export interface ExpeditionWidget extends Widget {
    * truncating, so what OCR actually recognized is always checkable - on by
    * default; turn off for a more compact widget once names aren't needed */
   uncapNameWidth: boolean;
+  /** Master switch for the succession-rune layer: which reward row carries the
+   * more valuable long-term modifier, not just the higher-priced item. OFF by
+   * default, and gated at the request itself - with this off, no detection work
+   * runs at all and the reward pricing behaves exactly as it did before this
+   * feature existed. See EXPEDITION_RUNE_PORT_PLAN.md. */
+  trackRunes: boolean;
+  /**
+   * How much rune detail to show per row.
+   * - "summary": one line per row, naming a rune only when it's worth reacting
+   *   to. The default, because it's the only mode that cannot make rows overlap
+   *   on a panel with many choices - each row stays exactly as tall as it was
+   *   before this feature existed.
+   * - "caged": one line, naming just the rune in the gilded cage (the only one
+   *   that actually propagates). Blank wherever the cage wasn't detected.
+   * - "all": every rune in the row, on a second line. The most informative and
+   *   the only mode that can overlap on a dense panel.
+   */
+  runeDisplay: "summary" | "caged" | "all";
 }
 
 export interface ImageStripWidget extends Widget {

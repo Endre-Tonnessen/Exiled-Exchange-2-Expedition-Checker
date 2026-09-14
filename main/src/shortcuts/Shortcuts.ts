@@ -80,7 +80,7 @@ export class Shortcuts {
     // same underlying scan, just requested by the renderer on a timer instead of a
     // global hotkey press.
     this.server.onEventAnyClient("CLIENT->MAIN::request-ocr", (e) => {
-      this.runOcrAndReply(e.target, e.region, Date.now());
+      this.runOcrAndReply(e.target, e.region, Date.now(), e.detectRunes);
     });
 
     uIOhook.on("keydown", (e) => {
@@ -311,7 +311,12 @@ export class Shortcuts {
               );
               return;
             }
-            this.runOcrAndReply(entry.action.target, entry.action.region, Date.now());
+            this.runOcrAndReply(
+              entry.action.target,
+              entry.action.region,
+              Date.now(),
+              entry.action.detectRunes,
+            );
           }
         },
       );
@@ -342,6 +347,7 @@ export class Shortcuts {
     target: string,
     region: { x: number; y: number; width: number; height: number },
     pressTime: number,
+    detectRunes = false,
   ) {
     if (process.platform !== "win32") {
       this.logger.write(
@@ -352,15 +358,28 @@ export class Shortcuts {
 
     try {
       const imageData = this.poeWindow.screenshot();
+      const screenshot = {
+        width: this.poeWindow.bounds.width,
+        height: this.poeWindow.bounds.height,
+        data: imageData,
+      };
+
+      // The rune layer, when it is asked for. Started BEFORE the OCR call and
+      // never awaited by it: the two run on different execution contexts (this
+      // one on the vision worker thread, OCR in a PowerShell subprocess), reply
+      // on their own IPC events, and neither can delay or fail the other. That
+      // independence is the requirement this feature is built around - the
+      // reward pricing already works and must behave identically whether rune
+      // tracking is on, off, or throwing.
+      //
+      // Both read the SAME screenshot rather than taking one each, so the two
+      // layers can never describe different frames of a panel mid-animation.
+      if (detectRunes) {
+        this.runRuneDetection(target, screenshot, region, pressTime);
+      }
+
       this.ocrWorker
-        .ocrExpeditionPanel(
-          {
-            width: this.poeWindow.bounds.width,
-            height: this.poeWindow.bounds.height,
-            data: imageData,
-          },
-          region,
-        )
+        .ocrExpeditionPanel(screenshot, region)
         .then((result) => {
           if (this.logKeys) {
             this.logger.write(
@@ -390,6 +409,49 @@ export class Shortcuts {
         `error [Shortcuts] expedition OCR screenshot failed: ${e}`,
       );
     }
+  }
+
+  // Rune detection for one capture. Separate method, separate worker call,
+  // separate reply event - nothing here touches the OCR path above.
+  //
+  // Failures are logged and dropped rather than propagated, deliberately: this
+  // layer is an optional overlay on top of pricing that already works, so a
+  // detector that breaks on some unexpected panel must cost the user their rune
+  // hints and nothing else.
+  private runRuneDetection(
+    target: string,
+    screenshot: { width: number; height: number; data: Uint8Array },
+    region: { x: number; y: number; width: number; height: number },
+    pressTime: number,
+  ) {
+    this.ocrWorker
+      .detectExpeditionRunes(screenshot, region)
+      .then((result) => {
+        if (this.logKeys) {
+          const cells = result.rows.reduce((n, r) => n + r.cells.length, 0);
+          const caged = result.rows.reduce(
+            (n, r) => n + r.cells.filter((c) => c.carriesForward).length,
+            0,
+          );
+          this.logger.write(
+            `debug [Shortcuts] expedition runes (${target}): ${result.rows.length} row(s), ${cells} cell(s), ${caged} caged in ${result.elapsed.toFixed(0)}ms` +
+              (result.diagnostic ? ` - ${result.diagnostic}` : ""),
+          );
+        }
+        this.server.sendEventTo("last-active", {
+          name: "MAIN->CLIENT::expedition-runes",
+          payload: {
+            target,
+            pressTime,
+            detectTime: result.elapsed,
+            rows: result.rows,
+            diagnostic: result.diagnostic,
+          },
+        });
+      })
+      .catch((e) => {
+        this.logger.write(`error [Shortcuts] expedition rune detection failed: ${e}`);
+      });
   }
 }
 
