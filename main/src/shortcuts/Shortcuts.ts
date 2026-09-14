@@ -79,7 +79,38 @@ export class Shortcuts {
     // Continuous-polling counterpart to the hotkey-driven "ocr-text" action below -
     // same underlying scan, just requested by the renderer on a timer instead of a
     // global hotkey press.
+    //
+    // A polled request that arrives while the game isn't in the foreground is
+    // answered WITHOUT scanning: no screenshot of a window that isn't in front,
+    // and no OCR subprocess, which is where the real cost is.
+    //
+    // It answers rather than staying silent so the requester's in-flight
+    // accounting stays exact (there is no request id to match on), and it says
+    // `skipped` rather than returning an empty result because those are
+    // different facts. Conflating them is a bug that was actually observed:
+    // opening the overlay's own settings blurs the game, so every poll came
+    // back "empty", and the widget - correctly treating an empty read as
+    // "panel closed" - wiped the results the user had opened the settings to
+    // look at. `skipped` means "no new information"; state is left alone.
+    //
+    // Deliberately gating only this path and not runOcrAndReply itself: the
+    // hotkey-driven scan is the price check that already works, and it stays
+    // byte-for-byte unchanged.
     this.server.onEventAnyClient("CLIENT->MAIN::request-ocr", (e) => {
+      if (!this.poeWindow.isActive) {
+        this.server.sendEventTo("last-active", {
+          name: "MAIN->CLIENT::ocr-text",
+          payload: {
+            target: e.target,
+            pressTime: Date.now(),
+            ocrTime: 0,
+            paragraphs: [],
+            rows: [],
+            skipped: true,
+          },
+        });
+        return;
+      }
       this.runOcrAndReply(e.target, e.region, Date.now(), e.detectRunes);
     });
 

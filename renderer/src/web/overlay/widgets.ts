@@ -86,7 +86,26 @@ export interface ExpeditionWidget extends Widget {
   mode: "hotkey" | "continuous";
   hotkey: string | null;
   region: ExpeditionCaptureRegion | null;
+  /**
+   * How often the capture region is re-scanned, in milliseconds. Drives two
+   * different things depending on `continuousScan`: how quickly the panel is
+   * noticed opening (continuous), or how quickly results clear once you close
+   * it (hotkey). The widget clamps this to a sane range at use time.
+   */
   pollIntervalMs: number;
+  /**
+   * Watch for the Runeshape Combinations panel continuously instead of waiting
+   * for the scan hotkey, so the widget shows itself when the panel opens and
+   * hides when it closes.
+   *
+   * OFF by default, and experimental: PoE2 exposes no way to ask whether the
+   * panel is open, so this works by re-scanning the capture region on a timer
+   * forever - one screenshot plus one OCR subprocess per tick, for the whole
+   * session. That is a real recurring cost, and nobody should pay it without
+   * choosing to. With this off, scanning happens only on a hotkey press (and
+   * briefly afterwards, to notice the panel closing), exactly as before.
+   */
+  continuousScan: boolean;
   /** shows the unprocessed OCR text lines alongside the parsed rows, for diagnosing
    * new/changed panels or matching issues without instrumenting code */
   showRawOcr: boolean;

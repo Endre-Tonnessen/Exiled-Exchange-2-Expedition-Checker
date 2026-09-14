@@ -52,6 +52,29 @@
       </div>
     </div>
 
+    <!-- Its own section rather than another checkbox in the list below: this
+         one changes how much work the app does while you play, which is a
+         different kind of decision from the display options. -->
+    <div class="border-t border-gray-700 pt-3 flex flex-col gap-2">
+      <UiCheckbox v-model="continuousScan">{{ t(":continuous_scan") }}</UiCheckbox>
+      <div class="text-gray-500 text-xs">{{ t(":continuous_scan_notice") }}</div>
+
+      <label class="flex items-center gap-2 text-sm">
+        <span>{{ t(":poll_interval") }}</span>
+        <input
+          type="number"
+          step="0.5"
+          min="1"
+          max="30"
+          v-model.number="pollIntervalSeconds"
+          class="bg-gray-900 rounded px-1 w-20"
+        />
+      </label>
+      <div class="text-gray-500 text-xs">
+        {{ continuousScan ? t(":poll_interval_notice_continuous") : t(":poll_interval_notice_hotkey") }}
+      </div>
+    </div>
+
     <UiCheckbox v-model="showRawOcr">{{ t(":show_raw_ocr") }}</UiCheckbox>
     <UiCheckbox v-model="colorCodeValues">{{ t(":color_code_values") }}</UiCheckbox>
     <UiCheckbox v-model="uncapNameWidth">{{ t(":uncap_name_width") }}</UiCheckbox>
@@ -181,6 +204,21 @@ const regionY = regionField("y");
 const regionWidth = regionField("width");
 const regionHeight = regionField("height");
 
+// Seconds in the UI, milliseconds in the config - "3000" in a box labelled
+// "scan every" invites reading it as seconds and setting a 50-minute interval.
+// The widget clamps whatever lands here to its own sane range at use time, so
+// this only has to be reasonable, not defensive.
+const pollIntervalSeconds = computed<number>({
+  get() {
+    return (props.configWidget.pollIntervalMs ?? 3000) / 1000;
+  },
+  set(value) {
+    if (!Number.isFinite(value)) return;
+    props.configWidget.pollIntervalMs = Math.round(value * 1000);
+  },
+});
+
+const continuousScan = configModelValue(() => props.configWidget, "continuousScan");
 const showRawOcr = configModelValue(() => props.configWidget, "showRawOcr");
 const colorCodeValues = configModelValue(() => props.configWidget, "colorCodeValues");
 const uncapNameWidth = configModelValue(() => props.configWidget, "uncapNameWidth");

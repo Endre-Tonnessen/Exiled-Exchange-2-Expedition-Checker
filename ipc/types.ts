@@ -228,6 +228,22 @@ type IpcOcrText = Event<
     // panel instead of in a separate stacked list. Optional so "heist-gems"
     // consumers (which only ever read `paragraphs`) don't need to change.
     rows?: { text: string; y: number; height: number }[];
+    /**
+     * True when main answered WITHOUT scanning (currently: a polled request
+     * that arrived while the game wasn't in the foreground).
+     *
+     * It exists because "I looked and the panel isn't there" and "I didn't
+     * look" are different facts that an empty `rows` cannot tell apart, and a
+     * consumer that confuses them throws away good results: the expedition
+     * widget treats a genuinely empty read as "panel closed" and clears, which
+     * is right - but doing that when the user merely opened the overlay's own
+     * settings (which blurs the game) wiped the results they were looking at.
+     * A skipped reply means "no new information", so state is left untouched.
+     *
+     * Still a REPLY, not silence, so a requester's in-flight accounting stays
+     * exact: every request gets exactly one answer.
+     */
+    skipped?: boolean;
   }
 >;
 
