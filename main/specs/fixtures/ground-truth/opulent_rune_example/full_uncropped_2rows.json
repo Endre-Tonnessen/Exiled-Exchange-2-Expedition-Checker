@@ -1,0 +1,78 @@
+{
+  "notes": "Built from user dictation - a complete, unmodified real screenshot, not artificially cropped, same rationale as More_complex_test_1's full_uncropped_3rows.json (testing the real uncropped-capture case, title bar/chrome included; region left null deliberately). Row order top-to-bottom as dictated: Chaos Orb row, then Exalted Orb row. Same cell/rune/border content as the two per-row crops in this folder - see their notes for the reward-text-inferred-from-filename caveat and the resolved Opulent-carriesForward / Power-blue-tier / open Oath question. If row count comes back off (known title-bar artifact, or the extra-rows issue already seen on More_complex_test_1's uncropped fixture), report it rather than adjusting this file to match - the whole point of this fixture is testing the uncropped case as-is.",
+  "source": "ocr-playground/fixtures/ground-truth/opulent_rune_example/full_uncropped_2rows.json",
+  "image": "opulent_rune_example/full_uncropped_2rows.bmp",
+  "region": null,
+  "rows": [
+    {
+      "rewardText": "1x Perfect Chaos Orb",
+      "cells": [
+        {
+          "tier": "none",
+          "carriesForward": false,
+          "runeId": "adaptive"
+        },
+        {
+          "tier": "none",
+          "carriesForward": false,
+          "runeId": "celestial"
+        },
+        {
+          "tier": "none",
+          "carriesForward": false,
+          "runeId": "oath"
+        },
+        {
+          "tier": "blue",
+          "carriesForward": false,
+          "runeId": "power"
+        },
+        {
+          "tier": "gold",
+          "carriesForward": true,
+          "runeId": "opulent"
+        },
+        {
+          "tier": "none",
+          "carriesForward": false,
+          "runeId": "celestial"
+        }
+      ]
+    },
+    {
+      "rewardText": "1x Perfect Exalted Orb",
+      "cells": [
+        {
+          "tier": "none",
+          "carriesForward": false,
+          "runeId": "adaptive"
+        },
+        {
+          "tier": "none",
+          "carriesForward": false,
+          "runeId": "life"
+        },
+        {
+          "tier": "none",
+          "carriesForward": false,
+          "runeId": "earth"
+        },
+        {
+          "tier": "blue",
+          "carriesForward": false,
+          "runeId": "power"
+        },
+        {
+          "tier": "gold",
+          "carriesForward": true,
+          "runeId": "opulent"
+        },
+        {
+          "tier": "none",
+          "carriesForward": false,
+          "runeId": "oath"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "notes": "Built from user dictation. Reward text '1x Perfect Chaos Orb' follows the '{n}x Perfect {currency}' pattern already seen in the README's own worked example ('3x Perfect Orb of Augmentation') - not separately char-for-char dictated, flag if wrong. RESOLVED 2026-09-14 (see PANEL_GEOMETRY_NOTES.md's 'Resolved' entry): the square boundary around Opulent Rune's cell is the Remnant's succession/carries-forward marker (carriesForward:true), a per-Remnant fact independent of Opulent's own tier-color (which the manifest separately records as gold, from non-screenshot sourcing - the two happen to look the same color here, which is what originally caused this project to conflate them). Power Rune's blue border (tier) is confirmed the same way as prior sessions, and is NOT the carries-forward pick in this row - only Opulent is. Oath Rune (cell 2) was NOT dictated as having any border in this image, unlike the Basic_test_1 fixtures where an Oath cell was described as blue-bordered - taken at face value as plain here; EXPEDITION_LEAGUE_MECHANIC.md's own cross-checked source lists oath as purple-tier, not blue, so the Basic_test_1 blue reading is worth double-checking against the real image (see PANEL_GEOMETRY_NOTES.md).",
+  "source": "ocr-playground/fixtures/ground-truth/opulent_rune_example/row_6cells_1x_perfect_chaos_orb.json",
+  "image": "opulent_rune_example/row_6cells_1x_perfect_chaos_orb.bmp",
+  "region": null,
+  "rows": [
+    {
+      "rewardText": "1x Perfect Chaos Orb",
+      "cells": [
+        {
+          "tier": "none",
+          "carriesForward": false,
+          "runeId": "adaptive"
+        },
+        {
+          "tier": "none",
+          "carriesForward": false,
+          "runeId": "celestial"
+        },
+        {
+          "tier": "none",
+          "carriesForward": false,
+          "runeId": "oath"
+        },
+        {
+          "tier": "blue",
+          "carriesForward": false,
+          "runeId": "power"
+        },
+        {
+          "tier": "gold",
+          "carriesForward": true,
+          "runeId": "opulent"
+        },
+        {
+          "tier": "none",
+          "carriesForward": false,
+          "runeId": "celestial"
+        }
+      ]
+    }
+  ]
+}

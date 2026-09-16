@@ -1,0 +1,43 @@
+{
+  "notes": "Built from user dictation. Reward text '3x Divine Orb' is inferred from the filename, matching the '{n}x {currency}' pattern already confirmed correct (after normalizeQuantityPrefix) for the Basic_test_1 fixtures - flag it if wrong. RESOLVED 2026-09-14 (see PANEL_GEOMETRY_NOTES.md's 'Resolved' entry): Power Rune's own border is blue (tier) AND it's separately the Remnant's succession/carries-forward pick (carriesForward) - two independent facts about the same cell, not alternatives. The other 5 cells in this row were not called out as having any border or cage, so treated as plain (gilded:false, tier:null, carriesForward:false).",
+  "source": "ocr-playground/fixtures/ground-truth/More_complex_test_1/row_6cells_3x_divine_orb.json",
+  "image": "More_complex_test_1/row_6cells_3x_divine_orb.bmp",
+  "region": null,
+  "rows": [
+    {
+      "rewardText": "3x Divine Orb",
+      "cells": [
+        {
+          "tier": "none",
+          "carriesForward": false,
+          "runeId": "death"
+        },
+        {
+          "tier": "none",
+          "carriesForward": false,
+          "runeId": "soul"
+        },
+        {
+          "tier": "blue",
+          "carriesForward": true,
+          "runeId": "power"
+        },
+        {
+          "tier": "none",
+          "carriesForward": false,
+          "runeId": "life"
+        },
+        {
+          "tier": "none",
+          "carriesForward": false,
+          "runeId": "vision"
+        },
+        {
+          "tier": "none",
+          "carriesForward": false,
+          "runeId": "celestial"
+        }
+      ]
+    }
+  ]
+}

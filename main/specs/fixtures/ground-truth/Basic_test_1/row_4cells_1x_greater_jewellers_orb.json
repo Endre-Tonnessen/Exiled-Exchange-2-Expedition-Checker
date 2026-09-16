@@ -1,0 +1,33 @@
+{
+  "notes": "Built from user dictation, not a bootstrap harness run. Reward text '1x Greater Jeweller's Orb' is inferred from the filename (not separately dictated) - if the pipeline's OCR mismatches, double check the exact on-screen text before assuming the pipeline is wrong. The Oath Rune cell's border was dictated as blue ('what i believe is a blue boundry', hedged) - this is tier/gilded (the rune's own border color), NOT the separate carriesForward succession marker (no square/cage was described for this cell). Still unresolved as of 2026-09-14: both manifest.json's pre-existing entry AND the independently-sourced, cross-checked Exiled-Exchange-2-Custom/EXPEDITION_LEAGUE_MECHANIC.md (§5) list oath as purple-tier, not blue - two sources against one hedged dictation. Worth asking the user to double-check this specific cell against the real image rather than trusting either source blindly (see PANEL_GEOMETRY_NOTES.md's 'Resolved' entry for the full writeup) - left as tier:'blue' here since that's what was actually dictated, not changed unilaterally.",
+  "source": "ocr-playground/fixtures/ground-truth/Basic_test_1/row_4cells_1x_greater_jewellers_orb.json",
+  "image": "Basic_test_1/row_4cells_1x_greater_jewellers_orb.bmp",
+  "region": null,
+  "rows": [
+    {
+      "rewardText": "1x Greater Jeweller's Orb",
+      "cells": [
+        {
+          "tier": "none",
+          "carriesForward": false,
+          "runeId": "prismatic"
+        },
+        {
+          "tier": "blue",
+          "carriesForward": false,
+          "runeId": "oath"
+        },
+        {
+          "tier": "none",
+          "carriesForward": false,
+          "runeId": "adaptive"
+        },
+        {
+          "tier": "none",
+          "carriesForward": false,
+          "runeId": "cyclonic"
+        }
+      ]
+    }
+  ]
+}

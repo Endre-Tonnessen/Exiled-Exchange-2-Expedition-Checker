@@ -1,0 +1,153 @@
+{
+  "notes": "Built from user dictation and then INDEPENDENTLY CONFIRMED, rune-for-rune and in order, against rune-combinations/data.json's scraped poe2db entries for all five 'Warding Rune of ...' recipes - the first fixture on file where an outside source agrees with the dictation cell by cell, so the rune identities here are unusually trustworthy. Reward text follows the '{n}x {name}' pattern; these are named item rewards, so unlike generic currency rows they resolve through the combination table. Cell 2 is the succession/propagation cage in EVERY row while holding a DIFFERENT rune each time (soul, oath, protective, rage, bond) - see PANEL_GEOMETRY_NOTES.md: that settles the cage as a marker on a SLOT POSITION, not on a rune identity. Cell 3 is stone in every row, dictated as blue-bordered, which matches stone's independently recorded blue tier in rune-icons/manifest.json. tier is left null on the caged cells because no colour was dictated for them, following this project's usual take-the-dictation-at-face-value rule - note oath (row 1) and bond (row 4) are both recorded as purple-tier in manifest.json from external sources, so if a run reports purple there it may be right and this file wrong; check the image before assuming the pipeline is at fault.",
+  "source": "ocr-playground/fixtures/ground-truth/full_live_images/full_uncropped_5rows.json",
+  "image": "full_live_images/full_uncropped_5rows.bmp",
+  "region": null,
+  "rows": [
+    {
+      "rewardText": "1x Warding Rune of Hollowing",
+      "cells": [
+        {
+          "tier": "none",
+          "carriesForward": false,
+          "runeId": "ward"
+        },
+        {
+          "tier": "none",
+          "carriesForward": false,
+          "runeId": "lightning"
+        },
+        {
+          "carriesForward": true,
+          "runeId": "soul"
+        },
+        {
+          "tier": "blue",
+          "carriesForward": false,
+          "runeId": "stone"
+        },
+        {
+          "tier": "none",
+          "carriesForward": false,
+          "runeId": "arcane"
+        }
+      ]
+    },
+    {
+      "rewardText": "1x Warding Rune of Bodyguards",
+      "cells": [
+        {
+          "tier": "none",
+          "carriesForward": false,
+          "runeId": "ward"
+        },
+        {
+          "tier": "none",
+          "carriesForward": false,
+          "runeId": "protective"
+        },
+        {
+          "carriesForward": true,
+          "runeId": "oath"
+        },
+        {
+          "tier": "blue",
+          "carriesForward": false,
+          "runeId": "stone"
+        },
+        {
+          "tier": "none",
+          "carriesForward": false,
+          "runeId": "prismatic"
+        }
+      ]
+    },
+    {
+      "rewardText": "1x Warding Rune of Equinox",
+      "cells": [
+        {
+          "tier": "none",
+          "carriesForward": false,
+          "runeId": "ward"
+        },
+        {
+          "tier": "none",
+          "carriesForward": false,
+          "runeId": "tempest"
+        },
+        {
+          "carriesForward": true,
+          "runeId": "protective"
+        },
+        {
+          "tier": "blue",
+          "carriesForward": false,
+          "runeId": "stone"
+        },
+        {
+          "tier": "none",
+          "carriesForward": false,
+          "runeId": "bloodletting"
+        }
+      ]
+    },
+    {
+      "rewardText": "1x Warding Rune of Obsession",
+      "cells": [
+        {
+          "tier": "none",
+          "carriesForward": false,
+          "runeId": "ward"
+        },
+        {
+          "tier": "none",
+          "carriesForward": false,
+          "runeId": "life"
+        },
+        {
+          "carriesForward": true,
+          "runeId": "rage"
+        },
+        {
+          "tier": "blue",
+          "carriesForward": false,
+          "runeId": "stone"
+        },
+        {
+          "tier": "none",
+          "carriesForward": false,
+          "runeId": "fire"
+        }
+      ]
+    },
+    {
+      "rewardText": "1x Warding Rune of Armature",
+      "cells": [
+        {
+          "tier": "none",
+          "carriesForward": false,
+          "runeId": "ward"
+        },
+        {
+          "tier": "none",
+          "carriesForward": false,
+          "runeId": "volcanic"
+        },
+        {
+          "carriesForward": true,
+          "runeId": "bond"
+        },
+        {
+          "tier": "blue",
+          "carriesForward": false,
+          "runeId": "stone"
+        },
+        {
+          "tier": "none",
+          "carriesForward": false,
+          "runeId": "vision"
+        }
+      ]
+    }
+  ]
+}

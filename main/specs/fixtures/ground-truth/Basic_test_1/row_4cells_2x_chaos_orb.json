@@ -1,0 +1,33 @@
+{
+  "notes": "Built from user dictation, not a bootstrap harness run. Reward text '2x Chaos Orb' is inferred from the filename (not separately dictated) - if the pipeline's OCR mismatches, double check the exact on-screen text before assuming the pipeline is wrong. This is the same Oath Rune cell/border the user described in the Jeweller's Orb row of this same test group (see row_4cells_1x_greater_jewellers_orb.json's notes for the still-open blue-vs-purple question against EXPEDITION_LEAGUE_MECHANIC.md) - dictated as blue-bordered (tier, not carriesForward - no square/cage described) here too.",
+  "source": "ocr-playground/fixtures/ground-truth/Basic_test_1/row_4cells_2x_chaos_orb.json",
+  "image": "Basic_test_1/row_4cells_2x_chaos_orb.bmp",
+  "region": null,
+  "rows": [
+    {
+      "rewardText": "2x Chaos Orb",
+      "cells": [
+        {
+          "tier": "none",
+          "carriesForward": false,
+          "runeId": "adaptive"
+        },
+        {
+          "tier": "blue",
+          "carriesForward": false,
+          "runeId": "oath"
+        },
+        {
+          "tier": "none",
+          "carriesForward": false,
+          "runeId": "fire"
+        },
+        {
+          "tier": "none",
+          "carriesForward": false,
+          "runeId": "rebirth"
+        }
+      ]
+    }
+  ]
+}

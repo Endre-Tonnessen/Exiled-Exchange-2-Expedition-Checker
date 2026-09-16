@@ -195,6 +195,41 @@ automatically (which resets any in-memory app state, e.g. unsaved widget config)
 
 See [DEVELOPING.md](./DEVELOPING.md) for formatting, production builds, and releasing.
 
+### Running the tests
+
+Each package has its own suite. `npm test` starts **watch** mode; use
+`npx vitest run` for a single pass.
+
+```shell
+cd renderer && npx vitest run   # parsing, price matching, rune identity
+cd main && npx vitest run       # OCR text repair, rune detection against real screenshots
+```
+
+Two things to know before reading a result:
+
+- **`renderer/specs/web/client-log.test.ts` fails, and always has.** It's a
+  pre-existing upstream failure, unrelated to anything here. Don't chase it.
+- **The rune-detection suite measures; it doesn't gate.** It runs the detector
+  over real panel screenshots and prints an accuracy table, then fails only if a
+  number drops below the recorded baseline. Individual cells being misread is
+  normal and expected - this is brittle pixel work, and the numbers exist to show
+  progress over time rather than to pass or fail.
+
+```shell
+cd main && npx vitest run specs/vision/expedition-runes   # just the accuracy table
+```
+
+After genuinely improving detection, re-record the floor:
+
+```shell
+cd main && UPDATE_RUNE_BASELINE=1 npx vitest run specs/vision/expedition-runes
+```
+
+Adding your own screenshots to the suite is the most useful contribution to it -
+[main/specs/fixtures/README.md](./main/specs/fixtures/README.md) has the recipe.
+That suite needs OpenCV, which the app downloads on first run; if it's missing,
+those tests skip rather than fail.
+
 ### Installing dependencies safely
 
 Use `npm ci`, not `npm install`, for routine setup - it installs exactly what

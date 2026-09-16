@@ -16,10 +16,15 @@ cd renderer && npx vitest run              # tests
 cd renderer && npm run lint
 
 # main
-cd main && npx tsc --noEmit                # typecheck
+cd main && npx tsc --noEmit                # typecheck (covers specs/ too)
+cd main && npx vitest run                  # tests
 cd main && node build/script.mjs --prod    # bundle (incl. the vision worker)
 cd main && npm run lint
 ```
+
+`npm test` in either package starts **watch** mode — use `npx vitest run` for a
+one-shot. The rune-detection suite prints an accuracy table and fails only on a
+drop; see `main/specs/fixtures/README.md`.
 
 Running the app needs two shells that both stay up — `renderer && npm run dev`
 first, then `main && npm run dev` (main loads the UI from localhost:5173). See
@@ -35,6 +40,9 @@ Two separate features sharing one screenshot. Docs, in reading order:
 `EXPEDITION_LEAGUE_MECHANIC.md` (the game), `EXPEDITION_CHECK.md` (the price
 check), `EXPEDITION_RUNE_TRACKING.md` (scoping), `EXPEDITION_RUNE_PORT_PLAN.md`
 (what was built and what wasn't).
+
+`ROADMAP.md` holds what's planned but not built, and what has already been ruled
+out — read it before proposing work, and add to it rather than re-deriving.
 
 ### 1. Price check — works, and must keep working
 
@@ -105,6 +113,13 @@ runs on the worker while OCR runs in its subprocess, from one shared screenshot
   was actually observed. Match that; don't strip them.
 - Short-lived branches. `feature/expedition-check` is the price-check baseline;
   `feature/expedition-rune-tracking` builds on it.
+- **PRs target `feature/expedition-check`, never `master`.** `master` is a
+  pristine mirror of upstream and is never committed to, so a PR opened against
+  it would show every local commit this fork has ever made. `gh` is installed but
+  not on the shell's PATH — call it as
+  `"/c/Program Files/GitHub CLI/gh.exe"`, and pass `--base feature/expedition-check`
+  explicitly, because the repo's default branch is `master` and `gh` will
+  otherwise pick it.
 - **The repo owner is the sole author of every commit.** Do not add
   `Co-Authored-By:` trailers for Claude or any other agent, and do not put
   agent attribution in commit messages, PR descriptions, or generated docs.
