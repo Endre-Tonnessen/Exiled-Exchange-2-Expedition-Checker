@@ -783,7 +783,18 @@ describe("clientLog", () => {
     const { handleLine } = useClientLog();
 
     const filePath = path.join(__dirname, "FullCampaign.txt");
-    const lines = fs.readFileSync(filePath, "utf-8").split("\n");
+    // The fixture is stored with CRLF, so splitting on "\n" alone leaves a
+    // trailing "\r" on every line and LogRegex — which ends in `.*$`, where `.`
+    // does not match "\r" and `$` is not multiline — then matches nothing at
+    // all. Trim and drop empties exactly as GameLogWatcher.readToEOF does, so
+    // this test feeds handleLine the same shape of line the real app does.
+    // (The sibling tests above are unaffected: their fixtures are template
+    // literals, and the language normalises CRLF to LF inside those.)
+    const lines = fs
+      .readFileSync(filePath, "utf-8")
+      .split("\n")
+      .map((line) => line.trim())
+      .filter((line) => line.length);
 
     for (const line of lines) {
       handleLine(line);
