@@ -87,8 +87,10 @@ and partly four ground-truth cells that turned out to be recording the cage (see
 }
 ```
 
-- **`tier`** — `"none"`, `"gold"`, `"blue"` or `"purple"`: the colour of *this
-  rune's own* frame. **Omit the key entirely when you don't know the colour** and
+- **`tier`** — in practice `"none"` or `"blue"`: the colour of *this rune's own*
+  frame. (`"gold"` and `"purple"` are still accepted by the schema and by the
+  detector's type, but neither can occur — see the note below before writing
+  one.) **Omit the key entirely when you don't know the colour** and
   that cell is skipped for this check. `"none"` is a claim that the border is
   plain, which is different from not knowing. Filling a missing one in from
   whatever the detector currently reports would make this file agree with the

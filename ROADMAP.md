@@ -27,7 +27,7 @@ to open it should eventually become a reason to open this app instead.
 
 ```
 cd main && npx vitest run          # 31 tests
-cd renderer && npx vitest run      # 54 tests  (one pre-existing failure in client-log.test.ts — not ours)
+cd renderer && npx vitest run      # 584 tests, 2 skipped, all passing (2026-09-17)
 ```
 
 Rune detection accuracy, graded over 11 real captures (19 rows, 95 cells):
@@ -151,8 +151,17 @@ Short version of what's open, in the doc's own order:
 - **E — lower the poll rate.** Cheapest possible change, but it buys performance
   by removing behaviour.
 
-Worth noting alongside: the rune detector currently costs a few milliseconds per
-capture on these fixtures, so it is not where the time goes. OCR is.
+Worth noting alongside: the rune detector costs 2.2–3.6 ms per capture on these
+fixtures (median of 20 runs, the 5-row panel being the slowest), so it is not
+where the time goes. OCR is.
+
+One easy win inside that, if it ever matters: `classifyRowCells` crops each cell
+and converts BGRA→BGR→HSV **twice** — once per edge, since 2026-09-17 — while
+`detectPanel` has already built a full-image HSV Mat and thrown it away. Passing
+an ROI of that Mat down would remove every per-cell conversion and close the
+BGRA-vs-HSV channel-order hazard `rune-vision.ts`'s header warns about at the
+same time. Left alone deliberately: 3.6 ms against OCR's ~300 ms is not worth
+a refactor of the one function this feature's correctness lives in.
 
 ---
 
@@ -163,6 +172,17 @@ capture on these fixtures, so it is not where the time goes. OCR is.
   row of `rows_cropped_2rows`, which is the same capture. Their cells drop out of
   both accuracy denominators. Item 1's debug view would likely explain this in
   seconds; without it, `detectRowBands` is where to start.
+
+- **The accuracy ratchet stores numerators only.** `baseline.json` records
+  `tierCorrect` / `cageCorrect` but not `tierGraded` / `cageGraded`
+  (`panel-detection.test.ts`'s `Baseline` type `Omit`s them), so a fixture edit
+  that adds graded cells can mask a detector regression: add N easy ones while
+  losing N−1 on cells already graded, and `toBeGreaterThanOrEqual` still passes.
+  This is not hypothetical — the 2026-09-17 run added `tier` to 5 previously
+  undictated cells, taking `tierGraded` 20→25 in one fixture, so that commit's
+  tier gain genuinely mixes new dictation with detector improvement and the
+  ratchet cannot separate them. Recording the denominators and comparing ratios
+  would close it, and is a few lines.
 
 - **The two `oath` tier misses.** `Basic_test_1`'s oath cell has a real blue
   frame drawn *inside* a gilded cage, and the blue peak in the classification

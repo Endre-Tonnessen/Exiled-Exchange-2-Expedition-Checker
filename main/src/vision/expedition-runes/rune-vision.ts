@@ -76,8 +76,16 @@ export function toGrayMat(bgraMat: any): any {
  * offsets (the cage outside, the rune's own frame a few px in) and the offset
  * between them is not fixed. Scanning a window of columns and taking each
  * band's peak finds whatever borders are actually there without needing either
- * offset - and `at` is what lets the caller tell the outer cage from the inner
- * tier frame afterwards.
+ * offset.
+ *
+ * `at` USED to be how the caller told the outer cage from the inner tier frame.
+ * It no longer is, and nothing reads it: there is no gold tier frame to tell a
+ * cage apart from (EXPEDITION_LEAGUE_MECHANIC.md §5.1), and the positional test
+ * built on it only ever rejected real cages. `classifyRowCells` separates them
+ * structurally instead - a cage has a bar at BOTH of a cell's edges. Kept
+ * because it costs nothing and is the obvious thing ROADMAP item 1's debug view
+ * will want, but note it is an offset into the crop it was measured on, which is
+ * not aligned to the cell's own left edge.
  */
 export function hueBandColumnProfile(
   hsvMat: any,
