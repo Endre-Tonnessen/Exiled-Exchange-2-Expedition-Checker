@@ -16,10 +16,15 @@ cd renderer && npx vitest run              # tests
 cd renderer && npm run lint
 
 # main
-cd main && npx tsc --noEmit                # typecheck
+cd main && npx tsc --noEmit                # typecheck (covers specs/ too)
+cd main && npx vitest run                  # tests
 cd main && node build/script.mjs --prod    # bundle (incl. the vision worker)
 cd main && npm run lint
 ```
+
+`npm test` in either package starts **watch** mode — use `npx vitest run` for a
+one-shot. The rune-detection suite prints an accuracy table and fails only on a
+drop; see `main/specs/fixtures/README.md`.
 
 Running the app needs two shells that both stay up — `renderer && npm run dev`
 first, then `main && npm run dev` (main loads the UI from localhost:5173). See
@@ -35,6 +40,9 @@ Two separate features sharing one screenshot. Docs, in reading order:
 `EXPEDITION_LEAGUE_MECHANIC.md` (the game), `EXPEDITION_CHECK.md` (the price
 check), `EXPEDITION_RUNE_TRACKING.md` (scoping), `EXPEDITION_RUNE_PORT_PLAN.md`
 (what was built and what wasn't).
+
+`ROADMAP.md` holds what's planned but not built, and what has already been ruled
+out — read it before proposing work, and add to it rather than re-deriving.
 
 ### 1. Price check — works, and must keep working
 
