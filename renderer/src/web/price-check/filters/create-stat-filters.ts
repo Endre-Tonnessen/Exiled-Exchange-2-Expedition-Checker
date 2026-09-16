@@ -216,6 +216,32 @@ export function createExactStatFilters(
     enableAllFilters(ctx.filters);
   }
 
+  // Magic tablets deliberately search `rarity: nonunique` -- create-item-filters
+  // skips the magic lock for Tablet (upstream 4eafcdc5b "tablets better", the
+  // idea being that a rare tablet carrying the same mods is a valid substitute).
+  // The side effect is that a magic-vs-magic comparison is diluted by rares with
+  // no way to narrow it: the `item.rarity_magic` toggle that non-tablet magic
+  // items get is created in finalFilterTweaks(), which only runs on the pseudo
+  // preset, and tablets only ever get the exact preset (create-presets.ts).
+  // So add it here. Pushed *after* the enableAllFilters() calls so that
+  // `defaultAllSelected` cannot silently lock the search to magic, and left
+  // `hidden`-less so it shows in the main row rather than under the collapse.
+  // Enabling it overwrites the rarity option to "magic" in createTradeRequest.
+  if (
+    item.category === ItemCategory.Tablet &&
+    item.rarity === ItemRarity.Magic &&
+    itemIsModifiable(item)
+  ) {
+    ctx.filters.push({
+      tradeId: ["item.rarity_magic"],
+      text: "Rarity: Magic",
+      statRef: "Rarity: Magic",
+      disabled: true,
+      tag: FilterTag.Pseudo,
+      sources: [],
+    });
+  }
+
   return ctx.filters;
 }
 
