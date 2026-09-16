@@ -1,5 +1,5 @@
 {
-  "notes": "Built from user dictation and then INDEPENDENTLY CONFIRMED, rune-for-rune and in order, against rune-combinations/data.json's scraped poe2db entries for all five 'Warding Rune of ...' recipes - the first fixture on file where an outside source agrees with the dictation cell by cell, so the rune identities here are unusually trustworthy. Reward text follows the '{n}x {name}' pattern; these are named item rewards, so unlike generic currency rows they resolve through the combination table. Cell 2 is the succession/propagation cage in EVERY row while holding a DIFFERENT rune each time (soul, oath, protective, rage, bond) - see PANEL_GEOMETRY_NOTES.md: that settles the cage as a marker on a SLOT POSITION, not on a rune identity. Cell 3 is stone in every row, dictated as blue-bordered, which matches stone's independently recorded blue tier in rune-icons/manifest.json. tier is left null on the caged cells because no colour was dictated for them, following this project's usual take-the-dictation-at-face-value rule - note oath (row 1) and bond (row 4) are both recorded as purple-tier in manifest.json from external sources, so if a run reports purple there it may be right and this file wrong; check the image before assuming the pipeline is at fault.",
+  "notes": "Built from user dictation and then INDEPENDENTLY CONFIRMED, rune-for-rune and in order, against rune-combinations/data.json's scraped poe2db entries for all five 'Warding Rune of ...' recipes - the first fixture on file where an outside source agrees with the dictation cell by cell, so the rune identities here are unusually trustworthy. Reward text follows the '{n}x {name}' pattern; these are named item rewards, so unlike generic currency rows they resolve through the combination table. Cell 2 is the succession/propagation cage in EVERY row while holding a DIFFERENT rune each time (soul, oath, protective, rage, bond) - see PANEL_GEOMETRY_NOTES.md: that settles the cage as a marker on a SLOT POSITION, not on a rune identity. Cell 3 is stone in every row, dictated as blue-bordered, which matches stone's independently recorded blue tier in rune-icons/manifest.json. The five caged cells had no tier for a long time because the original dictation said only 'bright border' without naming a colour. Dictated properly 2026-09-17, after re-reading the image at 6x: NONE of the runes inside the gilded cages has a coloured frame of its own - each one's own border is plain dark, and the cage around it is the only coloured thing. Recorded in the same pass and worth noting as corroboration: the same reading independently re-confirmed that all five cell-3 runes DO have a blue frame, which is what this file already said. Caution for anyone reconciling sources: oath (row 1) and bond (row 4) are recorded as purple-tier in ocr-playground/rune-icons/manifest.json from external sources. That conflicts with the reading here. This file records what is visible in THIS capture; if tier is a property of the rune shape rather than the instance, one of the two is wrong and it has not been settled.",
   "source": "ocr-playground/fixtures/ground-truth/full_live_images/full_uncropped_5rows.json",
   "image": "full_live_images/full_uncropped_5rows.bmp",
   "region": null,
@@ -18,6 +18,7 @@
           "runeId": "lightning"
         },
         {
+          "tier": "none",
           "carriesForward": true,
           "runeId": "soul"
         },
@@ -47,6 +48,7 @@
           "runeId": "protective"
         },
         {
+          "tier": "none",
           "carriesForward": true,
           "runeId": "oath"
         },
@@ -76,6 +78,7 @@
           "runeId": "tempest"
         },
         {
+          "tier": "none",
           "carriesForward": true,
           "runeId": "protective"
         },
@@ -105,6 +108,7 @@
           "runeId": "life"
         },
         {
+          "tier": "none",
           "carriesForward": true,
           "runeId": "rage"
         },
@@ -134,6 +138,7 @@
           "runeId": "volcanic"
         },
         {
+          "tier": "none",
           "carriesForward": true,
           "runeId": "bond"
         },

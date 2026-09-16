@@ -20,7 +20,7 @@
   "full_live_images/full_uncropped_5rows.json": {
     "rowsDetected": 5,
     "cellCountExact": 5,
-    "tierCorrect": 19,
+    "tierCorrect": 20,
     "cageCorrect": 22
   },
   "More_complex_test_1/full_uncropped_3rows.json": {
