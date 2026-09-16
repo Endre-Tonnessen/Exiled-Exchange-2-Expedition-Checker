@@ -126,6 +126,28 @@ code rather than in generated data, costs nothing at merge time.
   the local showcase screenshots and settings reference; take upstream's install,
   build and troubleshooting sections.
 
+### 6. Full-campaign client-log test reads its fixture the way the app does
+
+- **Files:** `renderer/specs/web/client-log.test.ts`
+- **Commit:** `ae298591` (merged as `69e26c0d`)
+- **Why it exists:** `FullCampaign.txt` is stored with CRLF and the test split it
+  on `"\n"` alone, so every line reached `handleLine` with a trailing `"\r"` and
+  `LogRegex`'s closing `(?<text>.*)$` matched none of the 13,570. It now trims
+  and drops empties, as `GameLogWatcher.readToEOF` already does.
+- **Drop it when:** the test passes on upstream unmodified — upstream trims in
+  the test, re-stores the fixture with LF endings, or lets `LogRegex` tolerate a
+  trailing `\r`. Check with `git show
+  upstream/master:renderer/specs/web/client-log.test.ts | grep -A3 FullCampaign`.
+- **Careful:** the two sibling tests above it pass *without* this, so a failure
+  here does not look like a line-ending problem. Their fixtures are template
+  literals, where the language normalises CRLF to LF; only the `readFileSync`
+  fixture carries `\r`. Keep the fix in the test rather than in `LogRegex` —
+  production never delivers a CR-terminated line, so loosening the regex would
+  paper over the point of the test.
+- **Status:** `client-log.test.ts` passes (28 passed, 2 skipped — both skipped
+  upstream already) and `tsc --noemit` is clean. Test-only; nothing verified in
+  game.
+
 ## When a conflict hits
 
 1. Find the row above for the file.
