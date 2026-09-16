@@ -73,7 +73,15 @@ describe("normalizeComboRowText", () => {
       quantity: 3,
       cleaned: "Chaos Orb",
     });
-    expect(normalizeComboRowText("10x Exalted Orb").quantity).toBe(10);
+    // Two-digit quantities graded whole, not just on `quantity`: the playground's
+    // version checked the full shape here and the port narrowed it, which left
+    // nothing proving that the SECOND digit gets stripped off the name too.
+    expect(normalizeComboRowText("10x Exalted Orb")).toEqual({
+      key: "exaltedorb",
+      level: null,
+      quantity: 10,
+      cleaned: "Exalted Orb",
+    });
   });
 
   it("drops a quantity marker mangled past repair so the name still resolves", () => {
