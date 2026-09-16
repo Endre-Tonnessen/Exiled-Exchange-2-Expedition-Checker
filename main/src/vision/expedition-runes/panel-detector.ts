@@ -88,6 +88,8 @@ export interface TierThresholds {
   satMin: number;
   goldMin: number;
   goldMax: number;
+  /** saturation floor for the gold band alone - the parchment is gold-hued and clears the shared one */
+  goldSatMin: number;
   purpleMin: number;
   purpleMax: number;
   blueMin: number;
@@ -100,6 +102,8 @@ export interface TierThresholds {
   minGoldColumnContrast: number;
   /** width of the edge sampling window, as a fraction of cell width */
   edgeWindowFraction: number;
+  /** how far the window reaches OUTSIDE the cell's left edge, to catch a cage drawn outside the cell's own frame */
+  cageOuterPadFraction: number;
   /** minimum absolute gold coverage for the succession cage */
   cageFloor: number;
   /** minimum gold coverage above the row's median for the cage */
@@ -114,6 +118,7 @@ export const DEFAULT_TIER_THRESHOLDS: TierThresholds = {
   satMin: 60,
   goldMin: 20,
   goldMax: 32,
+  goldSatMin: 100,
   purpleMin: 125,
   purpleMax: 165,
   blueMin: 95,
@@ -122,13 +127,22 @@ export const DEFAULT_TIER_THRESHOLDS: TierThresholds = {
   minRingContrast: 0.28,
   minGoldColumnContrast: 0.2,
   edgeWindowFraction: 0.22,
-  // The cage gets its own, lower bar than the tier frames. It is gold against a
-  // background that is ITSELF gold-hued parchment - a much narrower margin than
-  // blue or purple enjoy against that same background - and sharing one
-  // threshold pair made the two trade directly against each other: tightening
-  // it enough to stop purple glyph ink reading as a border immediately started
-  // losing real cages.
-  cageFloor: 0.28,
+  // ~2px at these cell sizes. Measured: with no outward reach at all the cage
+  // score tops out at 77/87 whatever else is tuned; with it, 85/87. See the
+  // note in classifyRowCells for why the cage can sit outside the cell.
+  cageOuterPadFraction: 0.06,
+  // REVISED 2026-09-17. The cage used to get a LOWER bar than the tier frames
+  // (0.28), on the reasoning that gold-on-gold-parchment is a narrower margin
+  // than blue or purple enjoy. That margin was narrow only because the gold
+  // band shared `satMin: 60` with the others, which the parchment clears: a
+  // plain cell read 0.10-0.30 gold and a real cage 0.33-0.92, so the two
+  // overlapped and no floor could separate them. With `goldSatMin: 100` - the
+  // measured gap between parchment (S 35-99) and a cage line (S 108-140) - a
+  // plain cell reads near zero, and the floor can go UP instead of down.
+  //
+  // Both numbers are the centre of a plateau, not a best single point: over
+  // goldSatMin 95-110 x cageFloor 0.48-0.56 the score is 85/87 throughout.
+  cageFloor: 0.52,
   cageContrast: 0.12,
 };
 
@@ -625,17 +639,26 @@ export function classifyRowCells(
     // ordinary first cell as caged on every full-panel capture. Such a cell is
     // still bounded on the RIGHT by a real line, so scan inward from that side.
     const atImageEdge = cell.x <= 1;
-    const windowW = Math.max(3, Math.round(cell.w * thresholds.edgeWindowFraction));
+    const innerW = Math.max(3, Math.round(cell.w * thresholds.edgeWindowFraction));
+    // Reach a few px OUTSIDE the cell as well, on the left. The cage is drawn
+    // outside the cell's own frame, and `detectCellsInRow` locks onto whichever
+    // strong line it finds - which for a cell that has both is the inner one.
+    // Measured: in full_uncropped_5rows the same cage column lands at cell.x=83
+    // in row 2 (gold peak 0.92, inside the window) and cell.x=86 in row 1 (peak
+    // 0.20 - the cage is at x 83-84, three px outside it). Same cage, same
+    // strip, found or missed purely on where the split fell.
+    const outerPad = atImageEdge
+      ? 0
+      : Math.min(cell.x, Math.round(cell.w * thresholds.cageOuterPadFraction));
+    const windowW = innerW + outerPad;
     const rect: CellRect = {
-      x: atImageEdge ? cell.x + cell.w - windowW : cell.x,
+      x: atImageEdge ? cell.x + cell.w - innerW : cell.x - outerPad,
       y: cell.y,
       w: windowW,
       h: cell.h,
     };
     return {
       cell,
-      atImageEdge,
-      windowW,
       profile: edgeWindowColumnProfile(cropBgra, rect, thresholds),
     };
   });
@@ -663,20 +686,32 @@ export function classifyRowCells(
     qualifies(s, "gold", thresholds.cageFloor, thresholds.cageContrast);
 
   return samples.map((s) => {
-    // The succession cage is the OUTERMOST border - a gold peak in the first
-    // slice of the window. The rune's own frame sits further in, so a gold peak
-    // deeper than that is the rune's colour, not a cage.
-    const outerZone = Math.max(1, Math.round(s.windowW * 0.4));
-    const goldAt = s.profile.gold.at;
-    const goldIsOutermost = s.atImageEdge
-      ? goldAt >= s.windowW - outerZone
-      : goldAt <= outerZone;
-    const carriesForward = isCage(s) && goldIsOutermost;
+    // Gold in the edge window means the cage, full stop. There is no positional
+    // test here any more, and no gold `tier`.
+    //
+    // RETRACTED 2026-09-17, by measurement. Both used to exist to separate "the
+    // cage's gold" from "the rune's OWN gold frame", on the strength of an
+    // opulent rune being gold-tiered AND caged. Scanning a caged opulent cell
+    // column by column shows it has no gold frame to separate: outside-in it
+    // reads cage gold (H~20-24, S~110-120, V~170-200), then the SAME dark brown
+    // frame every other cell has (H~11-15, S~95-110, V~135), then parchment. A
+    // caged `protective` cell one fixture over has the identical structure. The
+    // gold that was read as opulent's "tier" is its GLYPH, which is drawn in
+    // gold ink on the plate - a different thing in a different place, and the
+    // reason the fallback looked right. See EXPEDITION_LEAGUE_MECHANIC.md §5.1.
+    //
+    // The positional gate cost real cages: it rejected gold peaks at window
+    // offsets 5-7, which is simply where the cage line lands when cell
+    // splitting puts the cell's left edge a pixel or three inside it.
+    const carriesForward = isCage(s);
 
-    // Tier is the rune's OWN frame. Blue and purple can only ever be that (the
-    // cage is always gold), so they win outright; gold falls back to being read
-    // as the rune's own colour too, which is what an opulent rune - gold-tiered
-    // AND caged - actually looks like.
+    // Tier is the rune's OWN frame colour. Only blue and purple can be that -
+    // gold belongs to the cage - so nothing here can return "gold".
+    //
+    // Note that this is NOT the rune's tier in the game's sense: the frame is
+    // per-panel state (the same rune is blue-framed in one capture and plain in
+    // another), while the tier is carried by the glyph's ink colour and is
+    // fixed per rune shape. Same doc, same section.
     let tier: ClassifiedCell["tier"] = "none";
     let bestContrast = -Infinity;
     for (const band of ["blue", "purple"] as const) {
@@ -687,7 +722,6 @@ export function classifyRowCells(
         tier = band;
       }
     }
-    if (tier === "none" && isCage(s)) tier = "gold";
 
     return { cell: s.cell, profile: s.profile, tier, carriesForward };
   });

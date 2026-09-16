@@ -9,60 +9,60 @@
     "rowsDetected": 1,
     "cellCountExact": 1,
     "tierCorrect": 3,
-    "cageCorrect": 3
+    "cageCorrect": 4
   },
   "Basic_test_1/rows_cropped_2rows.json": {
     "rowsDetected": 1,
     "cellCountExact": 1,
     "tierCorrect": 3,
-    "cageCorrect": 3
+    "cageCorrect": 4
   },
   "full_live_images/full_uncropped_5rows.json": {
     "rowsDetected": 5,
     "cellCountExact": 5,
-    "tierCorrect": 20,
-    "cageCorrect": 22
+    "tierCorrect": 25,
+    "cageCorrect": 25
   },
   "More_complex_test_1/full_uncropped_3rows.json": {
     "rowsDetected": 3,
     "cellCountExact": 3,
     "tierCorrect": 15,
-    "cageCorrect": 13
+    "cageCorrect": 15
   },
   "More_complex_test_1/row_4cells_1x_divine_orb.json": {
     "rowsDetected": 1,
     "cellCountExact": 1,
     "tierCorrect": 4,
-    "cageCorrect": 3
+    "cageCorrect": 4
   },
   "More_complex_test_1/row_5cells_2x_divine_orb.json": {
     "rowsDetected": 1,
     "cellCountExact": 1,
     "tierCorrect": 5,
-    "cageCorrect": 4
+    "cageCorrect": 5
   },
   "More_complex_test_1/row_6cells_3x_divine_orb.json": {
     "rowsDetected": 1,
     "cellCountExact": 1,
     "tierCorrect": 6,
-    "cageCorrect": 5
+    "cageCorrect": 6
   },
   "opulent_rune_example/full_uncropped_2rows.json": {
     "rowsDetected": 2,
     "cellCountExact": 2,
     "tierCorrect": 12,
-    "cageCorrect": 11
+    "cageCorrect": 12
   },
   "opulent_rune_example/row_6cells_1x_perfect_chaos_orb.json": {
     "rowsDetected": 1,
     "cellCountExact": 1,
     "tierCorrect": 6,
-    "cageCorrect": 5
+    "cageCorrect": 6
   },
   "opulent_rune_example/row_6cells_1x_perfect_exalted_orb.json": {
     "rowsDetected": 1,
     "cellCountExact": 1,
     "tierCorrect": 6,
-    "cageCorrect": 5
+    "cageCorrect": 6
   }
 }

@@ -1,5 +1,5 @@
 {
-  "notes": "Combined crop of both rows covered individually by row_4cells_1x_greater_jewellers_orb.json and row_4cells_2x_chaos_orb.json in this same folder - same caveats apply (rewardText inferred from filename, Oath Rune border dictated as blue vs. manifest.json's compiled 'purple'). Row order assumed top-to-bottom matching the dictation order (Jeweller's Orb row, then Chaos Orb row) - correct if the on-screen order was actually reversed.",
+  "notes": "Combined crop of both rows covered individually by row_4cells_1x_greater_jewellers_orb.json and row_4cells_2x_chaos_orb.json in this same folder - same caveats apply (rewardText inferred from filename, Oath Rune border dictated as blue vs. manifest.json's compiled 'purple'). Row order assumed top-to-bottom matching the dictation order (Jeweller's Orb row, then Chaos Orb row) - correct if the on-screen order was actually reversed. CORRECTED 2026-09-17: carriesForward on the oath cell in BOTH rows was false and is now true - both rows carry a gilded cage on that cell, outside the blue frame, confirmed by the repo owner and by a 4x crop of this capture. The blue-vs-purple question in the caveat above is also settled, in the sibling file's notes: purple is oath's glyph ink (its tier), blue is this panel's frame state, and both readings were of real things.",
   "source": "ocr-playground/fixtures/ground-truth/Basic_test_1/rows_cropped_2rows.json",
   "image": "Basic_test_1/rows_cropped_2rows.bmp",
   "region": null,
@@ -14,7 +14,7 @@
         },
         {
           "tier": "blue",
-          "carriesForward": false,
+          "carriesForward": true,
           "runeId": "oath"
         },
         {
@@ -39,7 +39,7 @@
         },
         {
           "tier": "blue",
-          "carriesForward": false,
+          "carriesForward": true,
           "runeId": "oath"
         },
         {

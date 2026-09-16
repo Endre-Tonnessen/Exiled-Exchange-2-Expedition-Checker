@@ -23,6 +23,8 @@ export interface HueBandThresholds {
   satMin: number;
   goldMin: number;
   goldMax: number;
+  /** Saturation floor for the GOLD band only - see the note on `satMin` in panel-detector.ts. */
+  goldSatMin: number;
   purpleMin: number;
   purpleMax: number;
   blueMin: number;
@@ -98,8 +100,14 @@ export function hueBandColumnProfile(
       const idx = (y * cols + x) * 3;
       const h = data[idx];
       const s = data[idx + 1];
-      if (s < thresholds.satMin) continue;
-      if (inRange(h, thresholds.goldMin, thresholds.goldMax)) gold++;
+      // Gold is tested FIRST and against its own, higher saturation floor. The
+      // parchment this UI is drawn on is itself gold-hued, and at the shared
+      // floor it passes - which is the whole reason a plain cell used to report
+      // a gold border. Keeping the else-if chain below means a gold-hued pixel
+      // that fails the gold floor is not then offered to the other bands.
+      if (inRange(h, thresholds.goldMin, thresholds.goldMax)) {
+        if (s >= thresholds.goldSatMin) gold++;
+      } else if (s < thresholds.satMin) continue;
       else if (inRange(h, thresholds.purpleMin, thresholds.purpleMax)) purple++;
       else if (inRange(h, thresholds.blueMin, thresholds.blueMax)) blue++;
     }
