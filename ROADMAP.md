@@ -148,7 +148,118 @@ capture on these fixtures, so it is not where the time goes. OCR is.
 
 ---
 
-## 5. Known defects
+## 5. Island Rumours — a second mechanic, same pipeline shape
+
+**What:** Logbooks reveal Uncharted Waters, and each carries up to three **Island
+Rumours** — flavour-text lines like "Fallen Stars" or "Wild, Roaming Free". Each
+line maps to a specific destination island with a specific modifier set, and the
+game gives **no indication whatsoever** of which are worth taking. The value
+spread is enormous: "Fallen Stars" → Moor / Runestones is top-tier; "Wild,
+Roaming Free" → Grazed Prairie / Azmeri Spirits is bottom. Read the list, mark
+each line with its tier, in place.
+
+This is the same problem the rune work solves — *the game shows you a choice and
+helps you not at all* — on a different screen. Same technical shape too: capture
+region → OCR → fuzzy-match against a closed catalog → overlay the verdict. That
+makes it a second application of this app's existing architecture rather than
+scope creep.
+
+### Data already staged
+
+`ocr-playground/rumours/data.json` — **19 rumours**, tiered `S+` to `D`, with
+`{ id, name, aliases[], map, mods, rating, category }`. Human-compiled from real
+screenshots; provenance in `ocr-playground/rumours/SOURCE.md`, and the longer
+write-up of the mechanic is section 3 of `ocr-playground/FEATURE_ROADMAP.md`.
+
+Cross-checked against poe2db (2026-09-17) and it holds up: every island the two
+sources share agrees on its reward — Castaway → Gold, Untainted Paradise → Exp,
+Moment of Zen → the travelling merchant, and Obscure Island / Secluded Temple /
+Mournful Cliffside / Sprawling Jungle → Olroth / Uhtred / Vorana / Medved
+respectively. Two independent compilations agreeing on every overlapping point is
+better evidence than either alone.
+
+**It is incomplete, though, and now demonstrably so.** poe2db lists *The Fractured
+Lake* (mirrored rares, Fragmented Mirror) and *The Jade Isles* (three Manoki
+bosses); neither is in the staged 19. The staged file's own note guesses "~30+
+real rumours". Reconciling the two lists is a self-contained task that needs no
+code.
+
+### Check this before believing the framing
+
+The staged research puts the rumour list on the world map's **Uncharted Waters**
+panel, attached to a **Logbook**. **Sagas appear to be a different thing**: a Saga
+forces a specific boss encounter when used on unexplored waters (Aldur's Saga is
+the odd one out — it grants map affixes instead). If that is right, rumours are
+read off the logbook/waters panel and Sagas are a separate guarantee mechanism
+used alongside them, not the thing that displays rumours.
+
+This matters because **the capture region depends on it** — it decides which
+screen this feature even points at. Confirm it in game before designing anything.
+
+Nice connection either way: the price check **already reads Saga names**. The
+unported fixture `ocr-playground/fixtures/ground-truth/PlayerSkills2ManyModifers.json`'s
+sibling capture has five of them in one reward panel — Aldur's, Olroth's,
+Vorana's, Uhtred's, Medved's. So Sagas are themselves Expedition rewards flowing
+through the existing OCR path today.
+
+### The one question that decides the cost
+
+**Rumour lines render in the game's handwritten italic parchment font.** Windows
+OCR is calibrated on the block text of reward rows and reads it near-perfectly;
+there is no reason to assume it transfers. The staged data's `aliases[]` field
+exists precisely because the font produces mangled variants ("Nothin' to drink",
+"Somethin' fishy").
+
+**Spike this first, before building anything.** One screenshot of the panel
+through the existing bridge answers it:
+
+- **If Windows OCR reads it** — this is a cheap feature. Pure text, no pixels, so
+  it lives entirely in the renderer alongside `rune-identity.ts`: no OpenCV, no
+  worker thread, no `main/` work beyond pointing OCR at a second region. Cheaper
+  than the rune layer was.
+- **If it doesn't** — the cost changes category. It needs a Tesseract path with
+  real preprocessing, which means pixel work in `main/`, a second engine, and its
+  own fixture suite. `ocr-playground/preprocess.js` has prior art. Worth knowing
+  *before* committing, not after.
+
+### Sketch, assuming the cheap path
+
+- **Data** → `renderer/public/data/expedition/rumours.json`, same as
+  `rune-combinations.json` and `rune-ratings.json`. Split it the way runes are
+  split: facts (island, mods) separate from opinion (rating), so the tier list
+  stays user-editable without touching the catalog.
+- **Matching** → reuse the *algorithm* in `price-match.ts`, not the prices. Its
+  exact → digit-folded → prefix → fuzzy ladder is generic string resolution, and
+  it should work **better** here: 19–30 entries is a far smaller closed vocabulary
+  than the price index, so the thresholds can be much looser before collisions
+  become possible. `buildPriceIndex` keys by normalised name; a rumour index keys
+  by name *and* every alias, which is the same shape.
+- **Panel discrimination** → needs its own version of `looksLikeGemReward`. Stray
+  world text drifting into a capture region already caused a bug once (a chest
+  label appearing as a phantom row); a different screen gets a different
+  "is this panel actually open" rule, derived the same way — from real captures.
+- **Overlay** → `ExpeditionRow.vue`'s pattern (a verdict positioned against an OCR
+  line's own bounding box) transfers directly, since `ExpeditionOcrLine` already
+  carries `y`/`height` fractions per line.
+- **Separate widget, not a mode of the existing one.** Different screen, different
+  capture region, different calibration. Sharing the widget would mean sharing the
+  region, which is exactly wrong.
+- **Tests** → `main/specs/fixtures/` now exists and takes a new group by dropping
+  files in. A rumours group needs its own captures and ground truth; if the
+  Tesseract path turns out to be necessary, the pixel suite is already there to
+  host it.
+
+### Honest sizing
+
+Bigger than anything else on this list even on the cheap path, because it is a
+whole second feature: data, matching, a panel detector, a widget, settings,
+calibration, tests. The staged tier data and the existing OCR bridge remove real
+chunks of it, but not most of it. **Do the font spike, then decide** — that is a
+half-hour of work that determines whether the rest is days or weeks.
+
+---
+
+## 6. Known defects
 
 - **`Basic_test_1`'s single-row crop detects zero rows.** Reproducible, graded,
   and pinned in the baseline at 0 so it can only improve. It also costs the first
@@ -158,7 +269,7 @@ capture on these fixtures, so it is not where the time goes. OCR is.
 
 ---
 
-## 6. Retiring the playground
+## 7. Retiring the playground
 
 Not a single task — the end state of the items above. `ocr-playground/` stops
 being needed once: the debug view (1) covers visual troubleshooting, the fixture
@@ -169,6 +280,10 @@ ported and currently have no use here — `EXPEDITION_RUNE_PORT_PLAN.md` explain
 why the image-matching path they exist for was dropped in favour of resolving
 identity from the reward text. Revisit only if generic currency rows ever need
 naming.
+
+`rumours/data.json` is the other thing still living there (see 5). Unlike the
+sprite sets it has a clear future use, so the playground cannot be fully retired
+until Island Rumours is either built here or written off.
 
 ---
 
