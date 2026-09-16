@@ -113,6 +113,13 @@ runs on the worker while OCR runs in its subprocess, from one shared screenshot
   was actually observed. Match that; don't strip them.
 - Short-lived branches. `feature/expedition-check` is the price-check baseline;
   `feature/expedition-rune-tracking` builds on it.
+- **PRs target `feature/expedition-check`, never `master`.** `master` is a
+  pristine mirror of upstream and is never committed to, so a PR opened against
+  it would show every local commit this fork has ever made. `gh` is installed but
+  not on the shell's PATH — call it as
+  `"/c/Program Files/GitHub CLI/gh.exe"`, and pass `--base feature/expedition-check`
+  explicitly, because the repo's default branch is `master` and `gh` will
+  otherwise pick it.
 - **The repo owner is the sole author of every commit.** Do not add
   `Co-Authored-By:` trailers for Claude or any other agent, and do not put
   agent attribution in commit messages, PR descriptions, or generated docs.

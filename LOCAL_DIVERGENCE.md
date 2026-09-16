@@ -115,6 +115,12 @@ code rather than in generated data, costs nothing at merge time.
   repair — had no coverage anywhere. The renderer's vitest could not host them:
   reaching across packages would drag `main`'s `electron` imports into the
   renderer's suite.
+- **Binary assets:** `main/specs/fixtures/images/` holds 11 real panel captures as
+  24-bit BMP, ~2.9 MB total, committed deliberately. A hobby project shared with
+  friends is better served by `git clone` giving you a runnable test suite than by
+  keeping the repo lean; and the fixtures are worthless separated from the ground
+  truth that grades them. BMP rather than PNG because `@wokwi/bmp-ts` is already a
+  dependency here, so the suite needs no image-decoding package of its own.
 - **Drop it when:** upstream adds its own test runner to `main` — then keep the
   specs and delete the config, taking upstream's runner.
 - **Careful:** the `package.json` change is purely additive (`vitest` in
