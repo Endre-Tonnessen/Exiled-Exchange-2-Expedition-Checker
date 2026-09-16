@@ -76,7 +76,7 @@ strip's layout:
   text share one line; with many icons or a long name, the bar grows taller and the
   icons occupy the full row width with text dropping to its own line below. (Verified
   independently by two different OCR-based tools working against this same panel —
-  see §6.)
+  see §7.)
 
 ## 4. Succession / "gilded" runes — the carry-forward mechanic
 
@@ -185,7 +185,63 @@ notable as the one Runeshape that reportedly never appears in a normal Combinati
 row per that same source's own dev notes — worth confirming before building anything
 that assumes all 34 are selectable.)
 
-## 6. What this means for tooling (why this doc exists)
+## 6. The outer loop: Logbooks, Uncharted Waters, Island Rumours and Sagas
+
+Everything above describes what happens *on* an Expedition island. This section is the
+layer above it — how you choose which island to go to. It matters for tooling because
+it is a second place the game presents a choice with no help deciding, and because one
+of its items already flows through the widget that exists today.
+
+**Sourcing caveat, stronger than elsewhere in this doc:** this section is compiled from
+community guides plus a third-party tool's shipped tier data, and **has not been
+confirmed in game by anyone working on this fork.** Specifics — especially where in the
+UI each thing appears — should be verified before any code depends on them.
+
+- **Logbooks** are the consumable that reveals a new stretch of **Uncharted Waters** on
+  the world map, unlocking further islands to run.
+- Each logbook carries up to **three Island Rumours**: short flavour-text lines such as
+  "Fallen Stars", "Cold as ice", or "Wild, Roaming Free". Each line corresponds to a
+  specific destination island with a specific modifier or reward set — "Fallen Stars"
+  leads to a Moor with Runestones, "Wild, Roaming Free" to a Grazed Prairie with Azmeri
+  Spirits.
+- **The game does not say which is which.** The rumour text is pure flavour; nothing on
+  the panel indicates that one line is among the best outcomes available and another is
+  near-worthless. This is the same shape of problem as §3's reward rows.
+- **Sagas appear to be a separate mechanism, not the thing that shows rumours.** A Saga
+  is used on an unexplored area of the waters and forces a specific boss encounter —
+  Olroth's Saga guarantees Olroth, and so on. **Aldur's Saga is the exception**: rather
+  than spawning a boss it grants a set of unusually strong map affixes to the zone it
+  unlocks. The reported optimal play is to use a Saga on waters that already carry three
+  good rumours, stacking both.
+- **Sagas are themselves Expedition rewards**, which is the direct connection to the
+  existing widget: this project's own captures include a single reward panel offering
+  Aldur's, Olroth's, Vorana's, Uhtred's and Medved's Sagas as rows, meaning the price
+  check already OCRs these names today.
+
+### The rumour catalog is incomplete, and known to be
+
+A hand-compiled tier list of **19 rumours** (`S+` down to `D`, each with its destination
+island and modifier set) is staged in the sibling playground project at
+`ocr-playground/rumours/`; its `SOURCE.md` has the provenance. Cross-checking it against
+poe2db on 2026-09-17 found **agreement on every island the two sources share** —
+Castaway → Gold, Untainted Paradise → Experience, Moment of Zen → travelling merchant,
+and Obscure Island / Secluded Temple / Mournful Cliffside / Sprawling Jungle → Olroth /
+Uhtred / Vorana / Medved.
+
+It is nonetheless **not complete**: poe2db lists *The Fractured Lake* (mirrored rare
+monsters, Fragmented Mirror) and *The Jade Isles* (three Manoki bosses), neither of
+which appears in the staged 19, and the staged file itself estimates 30+ exist.
+
+### One detail that matters disproportionately for OCR
+
+**Rumour lines render in the game's handwritten italic parchment font**, not the block
+text the reward rows use. The staged tier data carries an `aliases[]` field precisely
+because that font produces mangled readings — "Nothin' to drink" for "Nothing to drink",
+"Somethin' fishy" for "Something Fishy". Whether Windows OCR can read this font at all
+is untested and is the single question that decides what a rumour feature costs to
+build; see `ROADMAP.md` §5.
+
+## 7. What this means for tooling (why this doc exists)
 
 The existing widget in this fork prices reward rows; it does not yet read or score the
 gilded-rune layer. A future feature here would need, at minimum:
@@ -225,3 +281,11 @@ directly relevant prior art for building the equivalent feature here.
 - [Official 0.5.0 "Return of the Ancients" patch notes thread](https://www.pathofexile.com/forum/view-thread/3932540)
 - [Maxroll — 0.5.0 Patch Notes summary](https://maxroll.gg/poe2/news/0-5-0-patch-notes-return-of-the-ancients)
 - A third-party tool's shipped game-data file (read-only reference — see caveat in §5)
+
+§6 (Logbooks / Uncharted Waters / Island Rumours / Sagas) additionally:
+
+- [poe2db — Island Rumours](https://poe2db.tw/us/Island_Rumours)
+- [Sportskeeda — All Island Rumors (Expedition mapping guide)](https://www.sportskeeda.com/mmo/all-island-rumors-path-exile-2-expedition-mapping-guide)
+- [aoeah.com — PoE 2 Best Island Rumors Tier List, How to Get & Use](https://www.aoeah.com/news/4666--poe-2-best-island-rumors-tier-list-how-to-get--use)
+- [Mobalytics — Grand Expeditions and Logbooks](https://mobalytics.gg/poe-2/profile/lolcohol/guides/grand-expeditions-and-logbooks)
+- `ocr-playground/rumours/data.json` + `SOURCE.md` (hand-compiled tier list, 19 entries)

@@ -150,68 +150,46 @@ capture on these fixtures, so it is not where the time goes. OCR is.
 
 ## 5. Island Rumours — a second mechanic, same pipeline shape
 
-**What:** Logbooks reveal Uncharted Waters, and each carries up to three **Island
-Rumours** — flavour-text lines like "Fallen Stars" or "Wild, Roaming Free". Each
-line maps to a specific destination island with a specific modifier set, and the
-game gives **no indication whatsoever** of which are worth taking. The value
-spread is enormous: "Fallen Stars" → Moor / Runestones is top-tier; "Wild,
-Roaming Free" → Grazed Prairie / Azmeri Spirits is bottom. Read the list, mark
-each line with its tier, in place.
+**The mechanic is documented in `EXPEDITION_LEAGUE_MECHANIC.md` §6** — logbooks,
+Uncharted Waters, rumours, Sagas, and the sourcing caveats. Read that first; this
+section is only about whether and how to build something on top of it.
+
+**What to build:** read the rumour list and mark each line with its value tier,
+in place. The game gives no indication which lines are good, and the spread is
+enormous — "Fallen Stars" → Runestones is top-tier, "Wild, Roaming Free" → Azmeri
+Spirits is bottom.
 
 This is the same problem the rune work solves — *the game shows you a choice and
-helps you not at all* — on a different screen. Same technical shape too: capture
-region → OCR → fuzzy-match against a closed catalog → overlay the verdict. That
-makes it a second application of this app's existing architecture rather than
-scope creep.
+helps you not at all* — on a different screen, with the same technical shape:
+capture region → OCR → fuzzy-match a closed catalog → overlay the verdict. A
+second application of this app's existing architecture, not a new one.
 
 ### Data already staged
 
 `ocr-playground/rumours/data.json` — **19 rumours**, tiered `S+` to `D`, with
-`{ id, name, aliases[], map, mods, rating, category }`. Human-compiled from real
-screenshots; provenance in `ocr-playground/rumours/SOURCE.md`, and the longer
-write-up of the mechanic is section 3 of `ocr-playground/FEATURE_ROADMAP.md`.
+`{ id, name, aliases[], map, mods, rating, category }`, hand-compiled from real
+screenshots. Provenance in `ocr-playground/rumours/SOURCE.md`; the mechanic doc
+records the poe2db cross-check (it agrees on every shared island) and the two
+islands poe2db has that this set lacks.
 
-Cross-checked against poe2db (2026-09-17) and it holds up: every island the two
-sources share agrees on its reward — Castaway → Gold, Untainted Paradise → Exp,
-Moment of Zen → the travelling merchant, and Obscure Island / Secluded Temple /
-Mournful Cliffside / Sprawling Jungle → Olroth / Uhtred / Vorana / Medved
-respectively. Two independent compilations agreeing on every overlapping point is
-better evidence than either alone.
+Reconciling the two lists into a complete catalog is a self-contained task that
+needs no code and could be done any time.
 
-**It is incomplete, though, and now demonstrably so.** poe2db lists *The Fractured
-Lake* (mirrored rares, Fragmented Mirror) and *The Jade Isles* (three Manoki
-bosses); neither is in the staged 19. The staged file's own note guesses "~30+
-real rumours". Reconciling the two lists is a self-contained task that needs no
-code.
+### Confirm the framing before designing anything
 
-### Check this before believing the framing
-
-The staged research puts the rumour list on the world map's **Uncharted Waters**
-panel, attached to a **Logbook**. **Sagas appear to be a different thing**: a Saga
-forces a specific boss encounter when used on unexplored waters (Aldur's Saga is
-the odd one out — it grants map affixes instead). If that is right, rumours are
-read off the logbook/waters panel and Sagas are a separate guarantee mechanism
-used alongside them, not the thing that displays rumours.
-
-This matters because **the capture region depends on it** — it decides which
-screen this feature even points at. Confirm it in game before designing anything.
-
-Nice connection either way: the price check **already reads Saga names**. The
-unported fixture `ocr-playground/fixtures/ground-truth/PlayerSkills2ManyModifers.json`'s
-sibling capture has five of them in one reward panel — Aldur's, Olroth's,
-Vorana's, Uhtred's, Medved's. So Sagas are themselves Expedition rewards flowing
-through the existing OCR path today.
+Nobody on this fork has verified in game *where* rumours appear, or that Sagas are
+the separate mechanism the guides describe. **The capture region depends on it** —
+it decides which screen this feature even points at. That is the first thing to
+check, and it is free.
 
 ### The one question that decides the cost
 
-**Rumour lines render in the game's handwritten italic parchment font.** Windows
-OCR is calibrated on the block text of reward rows and reads it near-perfectly;
-there is no reason to assume it transfers. The staged data's `aliases[]` field
-exists precisely because the font produces mangled variants ("Nothin' to drink",
-"Somethin' fishy").
+**Rumour lines render in the game's handwritten italic parchment font**, not the
+block text Windows OCR reads near-perfectly today. There is no reason to assume it
+transfers.
 
-**Spike this first, before building anything.** One screenshot of the panel
-through the existing bridge answers it:
+**Spike this before building anything.** One screenshot of the panel through the
+existing bridge answers it:
 
 - **If Windows OCR reads it** — this is a cheap feature. Pure text, no pixels, so
   it lives entirely in the renderer alongside `rune-identity.ts`: no OpenCV, no
