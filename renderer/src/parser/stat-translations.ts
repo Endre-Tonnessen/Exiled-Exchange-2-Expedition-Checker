@@ -152,8 +152,29 @@ function* _statPlaceholderGenerator(stat: string) {
         return replacements.includes(idx) ? matches[idx].rollStr : "#";
       });
 
+      // The roll regex above swallows the sign into the placeholder, so
+      // "+31(30-40)%" becomes "#%" and never "+#%". That suits nearly all of the
+      // data -- 1531 matchers start with a bare "#", because the dataParser strips
+      // a *leading* "+" (description.py parse_line) -- but that strip never reaches
+      // a "+" in the middle of a line, so ~10 matchers keep one, e.g. "Expeditions
+      // have +#% Surpassing chance to Duplicate Runic Monsters in Map". GGG's trade
+      // texts keep it too, which is why trade_store.py has to do
+      // .replace("+#%", "#%") on its side and why the TRADE_STAT_BY_MATCH_STR
+      // fallback misses them as well. Without a signed form those mods are
+      // unreachable by either lookup and read as "Not recognized modifier".
+      // Offered as an alternative rather than a replacement, and tried second, so
+      // nothing that already matches changes.
+      let signedIdx = -1;
+      const signed = withPlaceholders.replace(/#/gm, () => {
+        signedIdx += 1;
+        if (replacements.includes(signedIdx)) return matches[signedIdx].rollStr;
+        return matches[signedIdx]?.rollStr.startsWith("+") ? "+#" : "#";
+      });
+
       yield {
         stat: replaced,
+        // undefined when there was no sign to re-add, so callers skip the retry
+        signed: signed !== replaced ? signed : undefined,
         values: matches.filter(
           (_, idx) => !replacements.includes(idx),
         ) as Array<
@@ -165,7 +186,7 @@ function* _statPlaceholderGenerator(stat: string) {
 
   // fallback to exact stat text, without any placeholders
   // N # -> max 0 #
-  yield { stat, values: [] };
+  yield { stat, signed: undefined, values: [] };
 }
 
 export function tryParseTranslation(
@@ -177,15 +198,19 @@ export function tryParseTranslation(
   let backupParsedCombination;
 
   for (const combination of _statPlaceholderGenerator(stat.string)) {
-    const found = findAndResolveTranslation({
-      matchStr: combination.stat,
+    const lookup = {
       modType: modType,
       itemCategory: itemCategory,
       roll:
         combination.values.length === 1
           ? combination.values[0].roll
           : undefined,
-    });
+    };
+    const found =
+      findAndResolveTranslation({ ...lookup, matchStr: combination.stat }) ??
+      (combination.signed !== undefined
+        ? findAndResolveTranslation({ ...lookup, matchStr: combination.signed })
+        : undefined);
     const realType =
       modType === ModifierType.AddedAugment ? ModifierType.Augment : modType;
     if (
@@ -197,7 +222,15 @@ export function tryParseTranslation(
         continue;
       }
 
-      backupParsedStat = trySecondaryParseTranslation(combination.stat);
+      // Same retry on the trade-data fallback: a mod missing from the bundled
+      // stats.ndjson entirely (e.g. "Expeditions have +#% Surpassing chance to
+      // contain an additional Verisium Remnant", explicit.stat_3653794255) can only
+      // be rescued by "Reload fallback data", and GGG's text for it carries the "+".
+      backupParsedStat =
+        trySecondaryParseTranslation(combination.stat) ??
+        (combination.signed !== undefined
+          ? trySecondaryParseTranslation(combination.signed)
+          : undefined);
       if (backupParsedStat) {
         backupParsedCombination = combination;
       }

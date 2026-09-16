@@ -94,6 +94,13 @@ runs on the worker while OCR runs in its subprocess, from one shared screenshot
 
 - Upstream code is upstream — keep fork changes additive and localised where
   practical, so merges stay cheap.
+- **`LOCAL_DIVERGENCE.md` is the ledger of what this fork changes in upstream's
+  own files.** Read it before merging `upstream/master` in, and update it in the
+  same commit that adds, changes or retires a local divergence. It deliberately
+  records only each row's expiry condition ("did upstream just fix this
+  themselves?") and its merge hazard — the reasoning stays in the commit
+  messages, so the two cannot drift apart. The sync procedure is there too:
+  `master` is a pristine mirror of upstream and is never committed to.
 - Comments here explain **why**, usually citing a measurement or a failure that
   was actually observed. Match that; don't strip them.
 - Short-lived branches. `feature/expedition-check` is the price-check baseline;
