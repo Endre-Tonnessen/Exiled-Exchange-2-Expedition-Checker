@@ -61,6 +61,22 @@ const OPTION_STAT = {
   id: "local_jewel_display_radius_change",
 } as data.Stat;
 
+// A real tablet suffix ("of Twins"). Its matcher keeps a "+" in the middle of the
+// line, which the dataParser's leading-"+" strip never reaches, so the stored
+// string really is the signed one -- copied verbatim from stats.ndjson.
+const SIGNED_TABLET_STAT = {
+  ref: "Expeditions have #% Surpassing chance to Duplicate Runic Monsters in Map",
+  better: 1,
+  matchers: [
+    {
+      string:
+        "Expeditions have +#% Surpassing chance to Duplicate Runic Monsters in Map",
+    },
+  ],
+  trade: { ids: { explicit: ["explicit.stat_779964546"] } },
+  id: "map_expedition_twinned_elites_surpassing_chance_%",
+} as data.Stat;
+
 describe("tryParseTranslation", () => {
   beforeEach(async () => {
     vi.clearAllMocks();
@@ -279,5 +295,87 @@ describe("tryParseTranslation", () => {
 
     expect(data.STAT_BY_MATCH_STR).toHaveBeenCalled();
     expect(data.TRADE_STAT_BY_MATCH_STR).toHaveBeenCalledOnce();
+  });
+
+  it("should match a matcher that keeps a + before the placeholder", () => {
+    // Only the signed form is in the data, exactly as in stats.ndjson
+    vi.mocked(data.STAT_BY_MATCH_STR).mockImplementation((name) => {
+      if (name !== SIGNED_TABLET_STAT.matchers[0].string) return;
+      return {
+        stat: SIGNED_TABLET_STAT,
+        matcher: SIGNED_TABLET_STAT.matchers[0],
+      };
+    });
+    vi.mocked(data.TRADE_STAT_BY_MATCH_STR).mockReturnValue(undefined);
+
+    const result = __testExports.tryParseTranslation(
+      {
+        string:
+          "Expeditions have +31(30-40)% Surpassing chance to Duplicate Runic Monsters in Map",
+        unscalable: false,
+      },
+      ModifierType.Explicit,
+      undefined,
+    );
+
+    expect(result).toBeDefined();
+    expect(result?.stat).toBe(SIGNED_TABLET_STAT);
+    expect(result?.roll?.value).toBe(31);
+    expect(result?.roll?.min).toBe(30);
+    expect(result?.roll?.max).toBe(40);
+  });
+
+  it("should reach the trade fallback for a signed mod absent from bundled data", () => {
+    // "of Remnants" is in no stats.ndjson at all, so only "Reload fallback data"
+    // can resolve it -- and GGG's trade text carries the "+" as well
+    const TRADE_TEXT =
+      "Expeditions have +#% Surpassing chance to contain an additional Verisium Remnant";
+
+    vi.mocked(data.STAT_BY_MATCH_STR).mockReturnValue(undefined);
+    vi.mocked(data.TRADE_STAT_BY_MATCH_STR).mockImplementation((name) => {
+      if (name !== TRADE_TEXT) return;
+      return { explicit: ["explicit.stat_3653794255"] };
+    });
+
+    const result = __testExports.tryParseTranslation(
+      {
+        string:
+          "Expeditions have +36(30-40)% Surpassing chance to contain an additional Verisium Remnant",
+        unscalable: false,
+      },
+      ModifierType.Explicit,
+      undefined,
+    );
+
+    expect(result).toBeDefined();
+    expect(result?.translation.string).toBe(TRADE_TEXT);
+    expect(result?.stat.trade.ids.explicit).toEqual([
+      "explicit.stat_3653794255",
+    ]);
+    expect(result?.roll?.value).toBe(36);
+  });
+
+  it("should not retry with a + when the roll carries no sign", () => {
+    vi.mocked(data.STAT_BY_MATCH_STR).mockImplementation((name) => {
+      if (!name.startsWith("#")) return;
+      return {
+        stat: PHYS_DAMAGE_STAT,
+        matcher: PHYS_DAMAGE_STAT.matchers[0],
+      };
+    });
+    vi.mocked(data.TRADE_STAT_BY_MATCH_STR).mockReturnValue(undefined);
+
+    const result = __testExports.tryParseTranslation(
+      { string: "180(170-190)% increased Physical Damage", unscalable: false },
+      ModifierType.Explicit,
+      undefined,
+    );
+
+    expect(result?.stat).toBe(PHYS_DAMAGE_STAT);
+    expect(
+      vi
+        .mocked(data.STAT_BY_MATCH_STR)
+        .mock.calls.some(([name]) => name.includes("+#")),
+    ).toBe(false);
   });
 });
