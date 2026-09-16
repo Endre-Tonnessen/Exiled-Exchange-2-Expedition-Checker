@@ -5,6 +5,7 @@ import * as os from "os";
 import * as path from "path";
 import * as crypto from "crypto";
 import { cropImageFraction, FractionRect, ImageData } from "./utils";
+import { normalizeQuantityPrefix } from "./ocr-text-repair";
 
 export interface ExpeditionOcrLine {
   text: string;
@@ -55,19 +56,6 @@ interface WindowsOcrResponse {
 // asynchronous/non-blocking, so there's no heavy synchronous computation here to
 // keep off Electron's main thread.
 const SCRIPT_PATH = path.join(__dirname, "windows-ocr-recognize.ps1");
-
-// Observed consistently across every real test capture: Windows' recognizer
-// substitutes look-alike letters for the digits "1" and "0" specifically in the
-// leading quantity-prefix token ("1x" -> "IX", "10x" -> "IOX"), never elsewhere in
-// a line. Safe to fix with a line-start-anchored regex; a global I->1/O->0 replace
-// would corrupt real item names instead (e.g. "Orb"). See ocr-playground/README.md's
-// "Windows OCR (native)" section for how this was found.
-function normalizeQuantityPrefix(line: string): string {
-  return line.replace(
-    /^([IO]+)X\b/,
-    (_, digits: string) => digits.replace(/I/g, "1").replace(/O/g, "0") + "x",
-  );
-}
 
 async function runPowerShell(imagePath: string): Promise<string> {
   return await new Promise((resolve, reject) => {

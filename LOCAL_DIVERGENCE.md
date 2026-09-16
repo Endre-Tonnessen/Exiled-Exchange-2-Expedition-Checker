@@ -105,6 +105,27 @@ code rather than in generated data, costs nothing at merge time.
   from either side, because that is how a registration goes missing silently.
   `Shortcuts.ts` and `widgets.ts` are the two upstream edits most often.
 
+### 3b. A test runner in `main/`
+
+- **Files:** `main/package.json` (one `devDependencies` entry, one `scripts`
+  entry), `main/package-lock.json`, plus new files upstream has no opinion about:
+  `main/vitest.config.mts` and everything under `main/specs/`.
+- **Why it exists:** upstream's `main` package has no tests at all, so the whole
+  vision layer — row/cell detection, border classification, the OCR quantity-prefix
+  repair — had no coverage anywhere. The renderer's vitest could not host them:
+  reaching across packages would drag `main`'s `electron` imports into the
+  renderer's suite.
+- **Drop it when:** upstream adds its own test runner to `main` — then keep the
+  specs and delete the config, taking upstream's runner.
+- **Careful:** the `package.json` change is purely additive (`vitest` in
+  `devDependencies`, `"test": "vitest"` in `scripts`). On a conflict, re-add those
+  two lines on top of upstream's version rather than taking either side whole. The
+  lockfile will conflict on any upstream dependency change; regenerate it with
+  `npm install --legacy-peer-deps` rather than merging it by hand (plain
+  `npm install` fails on this tree with an `edgesOut` error from npm's own
+  `overrides` handling).
+- **Status:** 31 tests pass; `tsc --noEmit` covers the specs and is clean.
+
 ### 4. `expedition_check` strings in `app_i18n.json`
 
 - **Files:** `renderer/public/data/en/app_i18n.json` (+27, one contiguous block)
