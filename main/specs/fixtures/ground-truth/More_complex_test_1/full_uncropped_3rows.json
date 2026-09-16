@@ -1,0 +1,98 @@
+{
+  "notes": "Built from user dictation - a complete, unmodified real screenshot ('a complete example of a live situation'), not artificially cropped, unlike the other 3 files in this folder which isolate one row each. region is left null deliberately to exercise the real pipeline exactly as a live capture would hit it, title bar/chrome included. Row order assumed top-to-bottom as dictated: 3x, then 2x, then 1x Divine Orb. See fixtures/ground-truth/README.md's 'About the title bar showing up as a spurious row' section - if this file's row count comes back off by one with a garbled extra row 0, that's the known title-bar artifact, not a mistake in this file; report it rather than silently cropping it away, since the whole point of this particular fixture is testing the uncropped case. RESOLVED 2026-09-14: Power Rune's own border is blue (tier) in all three rows AND it's separately the Remnant's succession/carries-forward pick (carriesForward) - two independent facts, not alternatives - see PANEL_GEOMETRY_NOTES.md's 'Resolved' entry.",
+  "source": "ocr-playground/fixtures/ground-truth/More_complex_test_1/full_uncropped_3rows.json",
+  "image": "More_complex_test_1/full_uncropped_3rows.bmp",
+  "region": null,
+  "rows": [
+    {
+      "rewardText": "3x Divine Orb",
+      "cells": [
+        {
+          "tier": "none",
+          "carriesForward": false,
+          "runeId": "death"
+        },
+        {
+          "tier": "none",
+          "carriesForward": false,
+          "runeId": "soul"
+        },
+        {
+          "tier": "blue",
+          "carriesForward": true,
+          "runeId": "power"
+        },
+        {
+          "tier": "none",
+          "carriesForward": false,
+          "runeId": "life"
+        },
+        {
+          "tier": "none",
+          "carriesForward": false,
+          "runeId": "vision"
+        },
+        {
+          "tier": "none",
+          "carriesForward": false,
+          "runeId": "celestial"
+        }
+      ]
+    },
+    {
+      "rewardText": "2x Divine Orb",
+      "cells": [
+        {
+          "tier": "none",
+          "carriesForward": false,
+          "runeId": "death"
+        },
+        {
+          "tier": "none",
+          "carriesForward": false,
+          "runeId": "soul"
+        },
+        {
+          "tier": "blue",
+          "carriesForward": true,
+          "runeId": "power"
+        },
+        {
+          "tier": "none",
+          "carriesForward": false,
+          "runeId": "life"
+        },
+        {
+          "tier": "none",
+          "carriesForward": false,
+          "runeId": "vision"
+        }
+      ]
+    },
+    {
+      "rewardText": "1x Divine Orb",
+      "cells": [
+        {
+          "tier": "none",
+          "carriesForward": false,
+          "runeId": "death"
+        },
+        {
+          "tier": "none",
+          "carriesForward": false,
+          "runeId": "soul"
+        },
+        {
+          "tier": "blue",
+          "carriesForward": true,
+          "runeId": "power"
+        },
+        {
+          "tier": "none",
+          "carriesForward": false,
+          "runeId": "life"
+        }
+      ]
+    }
+  ]
+}

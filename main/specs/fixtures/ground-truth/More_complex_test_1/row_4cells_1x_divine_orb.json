@@ -1,0 +1,33 @@
+{
+  "notes": "Built from user dictation. Same reward row as row_6cells_3x_divine_orb.json in this folder, minus the trailing Vision and Celestial Rune cells (dictated as 'exactly the same just with one consecutive less rune at the end', applied twice relative to the 3x row). See that file's notes for the rewardText-inferred-from-filename caveat and the resolved Power Rune blue-tier + separately-carries-forward finding (PANEL_GEOMETRY_NOTES.md).",
+  "source": "ocr-playground/fixtures/ground-truth/More_complex_test_1/row_4cells_1x_divine_orb.json",
+  "image": "More_complex_test_1/row_4cells_1x_divine_orb.bmp",
+  "region": null,
+  "rows": [
+    {
+      "rewardText": "1x Divine Orb",
+      "cells": [
+        {
+          "tier": "none",
+          "carriesForward": false,
+          "runeId": "death"
+        },
+        {
+          "tier": "none",
+          "carriesForward": false,
+          "runeId": "soul"
+        },
+        {
+          "tier": "blue",
+          "carriesForward": true,
+          "runeId": "power"
+        },
+        {
+          "tier": "none",
+          "carriesForward": false,
+          "runeId": "life"
+        }
+      ]
+    }
+  ]
+}

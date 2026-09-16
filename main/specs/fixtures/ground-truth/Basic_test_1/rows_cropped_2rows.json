@@ -1,0 +1,58 @@
+{
+  "notes": "Combined crop of both rows covered individually by row_4cells_1x_greater_jewellers_orb.json and row_4cells_2x_chaos_orb.json in this same folder - same caveats apply (rewardText inferred from filename, Oath Rune border dictated as blue vs. manifest.json's compiled 'purple'). Row order assumed top-to-bottom matching the dictation order (Jeweller's Orb row, then Chaos Orb row) - correct if the on-screen order was actually reversed.",
+  "source": "ocr-playground/fixtures/ground-truth/Basic_test_1/rows_cropped_2rows.json",
+  "image": "Basic_test_1/rows_cropped_2rows.bmp",
+  "region": null,
+  "rows": [
+    {
+      "rewardText": "1x Greater Jeweller's Orb",
+      "cells": [
+        {
+          "tier": "none",
+          "carriesForward": false,
+          "runeId": "prismatic"
+        },
+        {
+          "tier": "blue",
+          "carriesForward": false,
+          "runeId": "oath"
+        },
+        {
+          "tier": "none",
+          "carriesForward": false,
+          "runeId": "adaptive"
+        },
+        {
+          "tier": "none",
+          "carriesForward": false,
+          "runeId": "cyclonic"
+        }
+      ]
+    },
+    {
+      "rewardText": "2x Chaos Orb",
+      "cells": [
+        {
+          "tier": "none",
+          "carriesForward": false,
+          "runeId": "adaptive"
+        },
+        {
+          "tier": "blue",
+          "carriesForward": false,
+          "runeId": "oath"
+        },
+        {
+          "tier": "none",
+          "carriesForward": false,
+          "runeId": "fire"
+        },
+        {
+          "tier": "none",
+          "carriesForward": false,
+          "runeId": "rebirth"
+        }
+      ]
+    }
+  ]
+}
