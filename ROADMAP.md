@@ -106,7 +106,7 @@ Specific gaps, roughly in order of value:
   defends against exactly this and nothing tests it), a panel where the blue
   frame sits on a rune *other* than the caged one and other than
   stone/power/oath (the four captures have only those three, which is why what
-  the blue frame means is still open — see item 6), and a 4K/non-1080p capture.
+  the blue frame means is still open — see item 8), and a 4K/non-1080p capture.
   A purple *border* is no longer on this list: measurement says none exists, and
   the frame only ever comes up plain or blue.
 
@@ -165,7 +165,204 @@ a refactor of the one function this feature's correctness lives in.
 
 ---
 
-## 5. Known defects
+## 5. Island Rumours — a second mechanic, same pipeline shape
+
+**The mechanic is documented in `EXPEDITION_LEAGUE_MECHANIC.md` §6** — logbooks,
+Uncharted Waters, rumours, Sagas, and the sourcing caveats. Read that first; this
+section is only about whether and how to build something on top of it.
+
+**What to build:** read the rumour list and mark each line with its value tier,
+in place. The game gives no indication which lines are good, and the spread is
+enormous — "Fallen Stars" → Runestones is top-tier, "Wild, Roaming Free" → Azmeri
+Spirits is bottom.
+
+This is the same problem the rune work solves — *the game shows you a choice and
+helps you not at all* — on a different screen, with the same technical shape:
+capture region → OCR → fuzzy-match a closed catalog → overlay the verdict. A
+second application of this app's existing architecture, not a new one.
+
+### Data already staged
+
+`ocr-playground/rumours/data.json` — **19 rumours**, tiered `S+` to `D`, with
+`{ id, name, aliases[], map, mods, rating, category }`, hand-compiled from real
+screenshots. Provenance in `ocr-playground/rumours/SOURCE.md`; the mechanic doc
+records the poe2db cross-check (it agrees on every shared island) and the two
+islands poe2db has that this set lacks.
+
+Reconciling the two lists into a complete catalog is a self-contained task that
+needs no code and could be done any time.
+
+### Confirm the framing before designing anything
+
+Nobody on this fork has verified in game *where* rumours appear, or that Sagas are
+the separate mechanism the guides describe. **The capture region depends on it** —
+it decides which screen this feature even points at. That is the first thing to
+check, and it is free.
+
+### The one question that decides the cost
+
+**Rumour lines render in the game's handwritten italic parchment font**, not the
+block text Windows OCR reads near-perfectly today. There is no reason to assume it
+transfers.
+
+**Spike this before building anything.** One screenshot of the panel through the
+existing bridge answers it:
+
+- **If Windows OCR reads it** — this is a cheap feature. Pure text, no pixels, so
+  it lives entirely in the renderer alongside `rune-identity.ts`: no OpenCV, no
+  worker thread, no `main/` work beyond pointing OCR at a second region. Cheaper
+  than the rune layer was.
+- **If it doesn't** — the cost changes category. It needs a Tesseract path with
+  real preprocessing, which means pixel work in `main/`, a second engine, and its
+  own fixture suite. `ocr-playground/preprocess.js` has prior art. Worth knowing
+  *before* committing, not after.
+
+### Sketch, assuming the cheap path
+
+- **Data** → `renderer/public/data/expedition/rumours.json`, same as
+  `rune-combinations.json` and `rune-ratings.json`. Split it the way runes are
+  split: facts (island, mods) separate from opinion (rating), so the tier list
+  stays user-editable without touching the catalog.
+- **Matching** → reuse the *algorithm* in `price-match.ts`, not the prices. Its
+  exact → digit-folded → prefix → fuzzy ladder is generic string resolution, and
+  it should work **better** here: 19–30 entries is a far smaller closed vocabulary
+  than the price index, so the thresholds can be much looser before collisions
+  become possible. `buildPriceIndex` keys by normalised name; a rumour index keys
+  by name *and* every alias, which is the same shape.
+- **Panel discrimination** → needs its own version of `looksLikeGemReward`. Stray
+  world text drifting into a capture region already caused a bug once (a chest
+  label appearing as a phantom row); a different screen gets a different
+  "is this panel actually open" rule, derived the same way — from real captures.
+- **Overlay** → `ExpeditionRow.vue`'s pattern (a verdict positioned against an OCR
+  line's own bounding box) transfers directly, since `ExpeditionOcrLine` already
+  carries `y`/`height` fractions per line.
+- **Separate widget, not a mode of the existing one.** Different screen, different
+  capture region, different calibration. Sharing the widget would mean sharing the
+  region, which is exactly wrong.
+- **Tests** → `main/specs/fixtures/` now exists and takes a new group by dropping
+  files in. A rumours group needs its own captures and ground truth; if the
+  Tesseract path turns out to be necessary, the pixel suite is already there to
+  host it.
+
+### Honest sizing
+
+Bigger than anything else on this list even on the cheap path, because it is a
+whole second feature: data, matching, a panel detector, a widget, settings,
+calibration, tests. The staged tier data and the existing OCR bridge remove real
+chunks of it, but not most of it. **Do the font spike, then decide** — that is a
+half-hour of work that determines whether the rest is days or weeks.
+
+---
+
+## 6. Game-data staleness — where a PoE2 patch breaks this fork
+
+PoE2 is in Early Access and its data moves. This feature set rests on a pile of
+game facts, and **most of them fail silently**: a stale recipe table doesn't throw,
+it names the wrong rune with full confidence. This section maps what is exposed,
+how each thing refreshes, and what the reliable sources are.
+
+**Drift is not hypothetical — it is already present in the shipped files.** The
+evidence is below.
+
+### The exposure map
+
+| What | Kind | Fails how | Refreshes how | Risk |
+| --- | --- | --- | --- | --- |
+| `rune-combinations.json` (314 recipes) | poe2db scrape | **Silently wrong rune names.** Identity resolution is entirely this file | **No tooling exists** — see below | **Highest** |
+| `rune-ratings.json` (6 runes) | Hand-compiled opinion | Recommends a trap, or misses one | Hand-edited; no date stamp | High |
+| `PANEL_GEOMETRY_DEFAULTS`, `DEFAULT_TIER_THRESHOLDS` | Pixel calibration | Rows/cells/cages misdetected after any UI restyle, or a new *frame* colour | Hand-tuned against captures | Medium — **but now has a tripwire** (§2) |
+| `parsing.ts` literals — `"runeshape"`, `skill\|spirit\|support`, gem level regex | UI text | Panel-open detection and gem pricing stop working | Hand-edited | Medium; also breaks under localisation |
+| `rumours/data.json` (19, incomplete) | Hand-compiled | n/a — not shipped yet | Hand-edited | Low today, inherits Highest if §5 ships |
+| Prices | Live trade API | Self-correcting | Automatic | **Lowest** |
+| `items.ndjson`, `stats.ndjson`, `remnants.json` | Upstream `dataParser`, GGG-derived | Upstream's problem | **Free, on merging upstream** | Lowest |
+
+### The single biggest hole: there is no way to refresh the recipe table
+
+`rune-combinations.json` carries `"source": "https://poe2db.tw/Runeshape_Combinations"`
+and `"fetchedUtc": "2026-09-14T03:34:15Z"`. Good provenance — but the script that
+produced it (`update-rune-combinations.ps1`) lives in the read-only sibling project
+and was **deliberately not copied**. Neither this repo nor the playground can
+re-scrape.
+
+So today, refreshing the single highest-risk file means writing a scraper from
+scratch. **Writing that script is the highest-value item in this section**, and it is
+worth doing before it is needed rather than during a patch scramble.
+
+### Evidence the drift is already here
+
+Upstream ships `renderer/public/data/remnants.json` — GGG-derived remnant data,
+regenerated on their "data update" commits (last one 2026-09-05), and **read by
+nothing in the app**. It overlaps our poe2db scrape, so the two can be compared.
+Doing that (2026-09-17) found:
+
+- **All 252 reward names in our scrape appear in upstream's data.** Zero missing.
+- **`volcanic` in our data is `Gasp` in upstream's — 13 of 13 rewards reachable via
+  `Gasp` have `volcanic` in the poe2db recipe, with no exceptions.** That is a
+  naming divergence or an outright rename, sitting in shipped data right now.
+- Reconstructing ordered rune lists from upstream's file and diffing: **41 recipes
+  fully agree, 45 conflict** (17 where both sources are complete, 28 on a position
+  both fill). The rest are gaps in upstream's file, not disagreements.
+
+**Caveat on that analysis, which matters:** upstream's `recipes` keys are
+`Rune|position|cellCount` *by inference* — 41 exact full-list agreements is strong
+evidence, not proof, and the 17 complete-row conflicts may partly mean the key
+format is being read wrong rather than that the data disagrees. Nobody has
+confirmed which source is right on any individual conflict. **Do not "fix" either
+file from the other without checking in game first.**
+
+### Reliable sources, ranked
+
+1. **Upstream's own data pipeline** (`dataParser/`, feeding `renderer/public/data/`).
+   GGG-derived, machine-generated, and it refreshes *for free* whenever upstream is
+   merged in. Most authoritative and lowest-effort thing available. It is also the
+   least-exploited: `remnants.json` has been sitting there unused this whole time.
+2. **The official trade API** (`pathofexile.com/api/trade2/data/*`). Authoritative
+   and live; already how prices and item/stat data arrive.
+3. **poe2db.tw.** Broad, structured, scrapeable, and the current source for recipes —
+   but community-maintained and, per the above, demonstrably diverges from upstream.
+   Good as *a* source, bad as the *only* source.
+4. **GGG patch notes / the official forum.** Not machine-readable, but the
+   authoritative answer to "what changed", which is the signal to act on.
+5. **Community wikis and guides** (Maxroll, Mobalytics, Game8, Fextralife). Fine for
+   opinion and ratings, weakest for exact data. Already how `rune-ratings.json` was
+   seeded, with per-entry `confidence` recorded for exactly this reason.
+
+### What to actually do
+
+In value order:
+
+1. **Write the re-scrape script** and keep it in this repo. Without it the
+   highest-risk file is unmaintainable.
+2. **Turn the upstream comparison into a standing test.** Cross-check
+   `rune-combinations.json` against `remnants.json` and fail on new disagreements.
+   That converts a one-off investigation into a tripwire that fires the next time
+   either side moves — and it costs nothing at runtime, since upstream's file is
+   already in the repo.
+3. **Settle `volcanic` vs `Gasp`** in game, and record the answer wherever it lands.
+4. **Stamp every owned data file** with `source` + `fetchedUtc` + the game version it
+   was taken from. `rune-combinations.json` does two of three; `rune-ratings.json`
+   does none.
+5. **Write down a refresh procedure per file** in
+   `renderer/public/data/expedition/README.md` — that README already says "re-scrape
+   after a major patch" without saying how.
+6. **Re-check ratings after balance patches.** The `oath` entry already notes a
+   signalled rework.
+
+### Tripwires that exist today
+
+Worth knowing before adding more:
+
+- **`rune-identity.test.ts` asserts every rune id in the shipped table is one of 34
+  known ids.** If a patch adds or renames a rune, that test fails — which is the
+  behaviour you want. (It would have caught `gasp` had that name reached our file.)
+- **The rune-detection fixture suite (§2)** is the tripwire for the *pixel*
+  calibration constants. A UI restyle shows up as the accuracy table dropping,
+  which is exactly what it is for.
+- The app itself hardcodes no rune catalog — only that test does. Keep it that way.
+
+---
+
+## 7. Known defects
 
 - **`Basic_test_1`'s single-row crop detects zero rows.** Reproducible, graded,
   and pinned in the baseline at 0 so it can only improve. It also costs the first
@@ -193,7 +390,7 @@ a refactor of the one function this feature's correctness lives in.
 
 ---
 
-## 6. Stop reading the tier from pixels
+## 8. Stop reading the tier from pixels
 
 **The finding (measured 2026-09-17, written up in
 `EXPEDITION_LEAGUE_MECHANIC.md` §5.1):** a rune's tier is the colour of its
@@ -236,7 +433,7 @@ decides whether the frame channel is worth detecting at all:
 
 ---
 
-## 7. Retiring the playground
+## 9. Retiring the playground
 
 Not a single task — the end state of the items above. `ocr-playground/` stops
 being needed once: the debug view (1) covers visual troubleshooting, the fixture
@@ -247,6 +444,10 @@ ported and currently have no use here — `EXPEDITION_RUNE_PORT_PLAN.md` explain
 why the image-matching path they exist for was dropped in favour of resolving
 identity from the reward text. Revisit only if generic currency rows ever need
 naming.
+
+`rumours/data.json` is the other thing still living there (see 5). Unlike the
+sprite sets it has a clear future use, so the playground cannot be fully retired
+until Island Rumours is either built here or written off.
 
 ---
 

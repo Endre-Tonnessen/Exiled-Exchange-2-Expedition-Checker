@@ -22,7 +22,7 @@
 //     tier is the colour of its GLYPH, which is fixed per rune shape and which
 //     this file does not read at all. `ClassifiedCell.tier` therefore reports
 //     the frame despite its name; EXPEDITION_LEAGUE_MECHANIC.md §5.1 has the
-//     measurement and ROADMAP item 6 the case for dropping the field.
+//     measurement and ROADMAP item 8 the case for dropping the field.
 //   - The cage is not always present. Some reward panels have no gilded cell at
 //     all, so "found none" is a legitimate result, not a detection failure.
 
@@ -604,7 +604,7 @@ export interface ClassifiedCell {
    * fixed per rune shape; and `"gold"` cannot occur because a gold frame is a
    * cage and is reported by `carriesForward`. Kept in the union only because the
    * ground-truth schema shares these names. EXPEDITION_LEAGUE_MECHANIC.md §5.1,
-   * and ROADMAP item 6 for the case that this field should not exist.
+   * and ROADMAP item 8 for the case that this field should not exist.
    */
   tier: "none" | "gold" | "purple" | "blue";
   /** the succession cage: this slot's rune propagates to later encounters */
