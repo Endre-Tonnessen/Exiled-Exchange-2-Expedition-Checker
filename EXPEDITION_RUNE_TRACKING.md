@@ -1,8 +1,21 @@
-# Succession-rune tracking — feature scoping (proposal, nothing built yet)
+# Succession-rune tracking — feature scoping
 
-Status: **speculative roadmap, not started.** No ticket, branch, or code exists for any
-of this yet. Written to capture the scoping discussion before it's lost, for whoever
-(human or agent) picks it up next — same spirit as
+Status as of 2026-09-17: **Features 1–3 are built and shipping; 4–5 are not
+started.** The original scoping below is kept as written, because the reasoning
+it records is still the reasoning the shipped code follows — but the status line
+on each feature says where it actually stands, and the header that used to read
+"speculative roadmap, not started" was true only until 2026-09-14.
+
+| # | Feature | Status |
+| --- | --- | --- |
+| 1 | Gilded Cell Highlight | **Shipped.** `main/src/vision/expedition-runes/` detects cells and gilding; gold underline in `rune-display.ts`. |
+| 2 | Rune Identity Resolution | **Shipped**, though by reward text rather than the icon catalog this doc assumed — see the note on Feature 2. |
+| 3 | Glossary Tooltip | **Shipped in part.** `runeTitle()` shows name, rating and rationale on hover. The verified effect-text table this doc specifies was never compiled; the text comes from `rune-ratings.json`'s `why` field. |
+| 4 | Per-Run Carried Set | Not started. No carried-set state exists in the code. |
+| 5 | Weighted Row Recommendation | Not started. Rows are still ranked on price alone. |
+
+Written to capture the scoping discussion before it's lost, for whoever (human or
+agent) picks it up next — same spirit as
 [EXPEDITION_CHECK.md](./EXPEDITION_CHECK.md).
 
 Read [EXPEDITION_LEAGUE_MECHANIC.md](./EXPEDITION_LEAGUE_MECHANIC.md) first — this doc assumes familiarity with the gilded/succession-rune mechanic it describes. It also
@@ -87,6 +100,17 @@ meaningfully by which specific rune it is (see the mechanic doc's tier table:
 
 **Scope.** Resolve each gilded cell to a specific rune, drawn from the 34-rune
 catalog.
+
+**Shipped, and the comparison below was settled by measurement.** Approach (b),
+reward-name table lookup, is what `rune-identity.ts` implements, and it names
+every cell in a row rather than only the gilded one. Approaches (a)/(a′) were
+not adopted: over three full-panel fixtures (52 labelled cells), name+position
+resolved 37 and a dHash match managed 3, because these glyphs are thin line art
+around 30px across and crops of the *same* rune from the *same* image hashed
+26–37 bits apart. Pixels are not currently used for identity at all. The
+prediction below that generic currency rows would stay unresolved held, but is
+narrower than expected in practice — see the `?` bullet in the README's Scope
+and known limitations.
 
 **Update, 2026-09-13 — corrected twice now; current understanding below.**
 First pass concluded approach (b) was ruled out: it seemed to depend on a
@@ -250,8 +274,14 @@ wrong score here is worse than no score, so this should ship last, not in parall
 
 ## Suggested entry point
 
-Features 1+3 (highlight + glossary) as a first slice: cheapest, purely educational,
-no risk of steering a decision wrong, and it directly answers "I don't understand
-this mechanic yet" while still playing. Features 4+5 (the actual
-scoring/recommendation) are the real payoff but should land only after Feature 2's
-identity resolution is trusted — a wrong recommendation is worse than an absent one.
+*Superseded — kept because its condition on Features 4+5 still governs.* The
+first slice recommended here, Features 1+3, is what shipped, and Feature 2 with
+it.
+
+Features 4+5 (the actual scoring/recommendation) are the real payoff but should
+land only after Feature 2's identity resolution is trusted — a wrong
+recommendation is worse than an absent one. That condition is **not yet met**:
+gilding detection is the known weak point, and Feature 5 reads gilding through
+Feature 4. Ranking rows on a blended score while the gilded flag is unreliable
+would produce exactly the wrong recommendation the paragraph above warns about,
+so the ordering constraint still holds.

@@ -147,11 +147,21 @@ code rather than in generated data, costs nothing at merge time.
 
 ### 5. Documentation
 
-- **Files:** `README.md` (+200/-11) and local-only docs — `CLAUDE.md`,
-  `AI_POLICY.md`, `EXPEDITION_*.md`, this file.
-- **Careful:** `README.md` is the only one upstream also edits. On conflict, keep
-  the local showcase screenshots and settings reference; take upstream's install,
-  build and troubleshooting sections.
+- **Files:** `README.md` (+175/-50), `DEVELOPING.md` (+68/-0), and local-only
+  docs — `CLAUDE.md`, `AI_POLICY.md`, `EXPEDITION_*.md`, this file.
+- **Careful:** `README.md` and `DEVELOPING.md` are the two upstream also edits.
+- **`README.md` is now a local rewrite, not upstream's file with additions.**
+  It was restructured so the capability showcase comes first; upstream's own 50
+  lines survive only as reordered fragments, which is why the deletion count
+  jumped. **This divergence is deliberate and permanent** — the fork's README
+  exists to show the Expedition work, which upstream's never will. On conflict,
+  keep the local file wholesale and cherry-pick anything genuinely new from
+  upstream (a changed download URL, a new upstream feature worth showcasing)
+  rather than attempting a merge.
+- **`DEVELOPING.md`** has two sections moved out of the README on 2026-09-17:
+  "How to run the tests" (inserted after Formatting) and "Installing
+  dependencies safely" (appended). Both are additive, so they should conflict
+  only where upstream edits the same two points.
 
 ### 6. Full-campaign client-log test reads its fixture the way the app does
 

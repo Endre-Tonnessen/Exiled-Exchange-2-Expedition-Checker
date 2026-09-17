@@ -170,10 +170,15 @@ scoped to survive Settings' save flow); quantity/name parsing and exact/prefix/f
 price matching; the gem-level "never guess" safety rule; a raw-OCR debug toggle
 (`showRawOcr`); Windows OCR's quantity-prefix digit-substitution fix.
 
-**Not implemented / deferred**: a standalone "continuous scan mode" toggle (today's
-polling only piggybacks on auto-close-detection *after* a hotkey-triggered scan, it
-isn't an independent always-on mode — `ExpeditionWidget.mode`/`pollIntervalMs` exist in
-the type but aren't fully wired to a settings UI); any confidence/row-drop indicator in
+Also implemented since this list was written: the standalone continuous-scan
+toggle, as `ExpeditionWidget.continuousScan` plus a user-set `pollIntervalMs`,
+both wired to the settings UI. `ExpeditionWidget.mode` is now vestigial —
+`WidgetExpedition.vue` pins it to `"hotkey"` and nothing reads it. And the whole
+succession-rune layer, described below as unbuilt; see
+[EXPEDITION_RUNE_TRACKING.md](./EXPEDITION_RUNE_TRACKING.md) for which of its
+five features shipped.
+
+**Not implemented / deferred**: any confidence/row-drop indicator in
 the UI (also less relevant now - `Windows.Media.Ocr` doesn't expose a per-word
 confidence score at all, unlike Tesseract); localization (English-only parsing/matching).
 
@@ -187,11 +192,14 @@ that's exactly what it's for, and it's how this replacement itself was validated
 **Planned but not started**: a second, user-selectable price source (poe2scout,
 24h-averaged - more stable than poe.ninja's latest-listing snapshot) - see
 [EXPEDITION_PRICE_SOURCES.md](./EXPEDITION_PRICE_SOURCES.md) for the researched
-plan, including why the obvious CORS blocker isn't actually one. Also speculative:
-tracking the gilded/succession-rune layer of the Combinations panel (which reward
-row carries the more valuable long-term modifier, not just the higher-priced item)
-- see [EXPEDITION_RUNE_TRACKING.md](./EXPEDITION_RUNE_TRACKING.md) for the scoped
-feature proposal, entirely unbuilt.
+plan, including why the obvious CORS blocker isn't actually one.
+
+The gilded/succession-rune layer that this section used to list as speculative is
+no longer: detection, identity resolution and the hover rationale all ship, off
+by default behind `trackRunes`. What remains unbuilt there is the carried-set
+tracking and the blended row score — Features 4 and 5 in
+[EXPEDITION_RUNE_TRACKING.md](./EXPEDITION_RUNE_TRACKING.md), which now carries a
+per-feature status table.
 
 ## File map
 
@@ -200,15 +208,23 @@ ipc/types.ts                                       IPC contract (ShortcutAction,
 main/src/vision/WindowsOcr.ts                       crop -> PNG -> Windows.Media.Ocr bridge
 main/src/vision/windows-ocr-recognize.ps1           the PowerShell/WinRT bridge script itself
 main/src/vision/link-main.ts                        OcrWorker.ocrExpeditionPanel (calls WindowsOcr directly)
+main/src/vision/link-worker.ts                      worker-thread side of the vision link
+main/src/vision/ocr-text-repair.ts                  quantity-prefix digit-substitution repair
 main/src/vision/utils.ts                            cropImageFraction
+main/src/vision/expedition-runes/                   cell + gilding detection (rune layer, OpenCV)
 main/build/script.mjs                               copies the .ps1 next to compiled output
 main/src/shortcuts/Shortcuts.ts                     runOcrAndReply, hotkey + poll trigger paths
 renderer/src/web/expedition-check/
   WidgetExpedition.vue                              display + auto-close polling
-  settings-expedition.vue                           hotkey field + region calibration UI
+  ExpeditionRow.vue                                 one rendered row, shared with the settings preview
+  settings-expedition.vue                           hotkey field + region calibration UI + rune preview
   parsing.ts                                        normalize / parseLine / resolveGemKey
   price-match.ts                                    buildPriceIndex / resolvePrice
+  rune-identity.ts                                  reward text + cell position -> rune name
+  rune-value.ts                                     loads the two data files; ratings and urgency
+  rune-display.ts                                   marker/underline styling and display modes
   region.ts                                         DEFAULT_REGION
+renderer/public/data/expedition/                    rune-combinations.json, rune-ratings.json (see its README)
 renderer/src/web/overlay/widgets.ts                 ExpeditionWidget, ExpeditionCaptureRegion
 renderer/src/web/overlay/widget-registry.ts          registration
 renderer/src/web/settings/SettingsWindow.vue         menu routing ("expedition-check" case)
