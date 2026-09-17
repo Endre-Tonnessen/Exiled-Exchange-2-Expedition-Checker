@@ -1,8 +1,15 @@
 # Expedition OCR — performance review
 
-Status: **baseline measured, one fix landed, the rest is open.** Written as a
-starting context for a later session so the measurements and the dead ends do
-not have to be rediscovered.
+Status: **baseline measured, the three fixes in §3 landed, the rest is open.**
+Written as a starting context for a later session so the measurements and the
+dead ends do not have to be rediscovered.
+
+**Scope caveat added 2026-09-17:** everything measured here predates the
+succession-rune layer. When `trackRunes` is on, each scan additionally runs
+OpenCV cell and gilding detection (`main/src/vision/expedition-runes/`) that is
+absent from the flow in §2 and from the 300 ms figure in §1. That cost has never
+been measured. The numbers below remain valid for the default configuration,
+where the rune layer is off and does no work at all.
 
 Read this before `EXPEDITION_CHECK.md` if performance is the task; read that one
 instead if the task is behaviour.
