@@ -17,16 +17,26 @@ table, and the test fails only when a number drops below `baseline.json` — the
 accuracy this code has actually reached. Improve something, re-record, and the
 new number becomes the floor.
 
-Accuracy when the fixtures were first ported (11 captures, 19 rows, 95 cells):
+Accuracy as of 2026-09-17 (11 captures, 19 rows, 95 cells):
 
 ```
-rows 17/19   cell counts 17/19 rows exact   tier 79/82 (96.3%)   cage 74/87 (85.1%)
+rows 17/19   cell counts 17/19 rows exact   tier 85/87 (97.7%)   cage 87/87 (100%)
 ```
 
 Two rows are missed entirely, both in `Basic_test_1` — that capture's single-row
 crop finds no row at all, which also costs the first row of `rows_cropped_2rows`.
-Their cells drop out of the tier/cage denominators, which is why those read 82
-and 87 rather than 90 and 95.
+Their cells drop out of the tier/cage denominators, which is why those read 87
+rather than 95.
+
+The two remaining tier misses are the `oath` cell in the two graded
+`Basic_test_1` rows: it has a real blue frame, drawn *inside* a gilded cage, and
+the blue peak in the sampling window reads 0.17 against a `ringFloor` of 0.4.
+Not chased yet — understand it before moving that floor.
+
+At the time of the port these read `tier 79/82` and `cage 74/87`. Both moved on
+2026-09-17: the cage gain is a real detector fix, the tier gain is partly a fix
+and partly four ground-truth cells that turned out to be recording the cage (see
+`ground-truth/opulent_rune_example/row_6cells_1x_perfect_chaos_orb.json`).
 
 ## Adding a capture
 
@@ -77,13 +87,24 @@ and 87 rather than 90 and 95.
 }
 ```
 
-- **`tier`** — `"none"`, `"gold"`, `"blue"` or `"purple"`: the colour of *this
-  rune's own* frame. **Omit the key entirely when you don't know the colour** and
+- **`tier`** — in practice `"none"` or `"blue"`: the colour of *this rune's own*
+  frame. (`"gold"` and `"purple"` are still accepted by the schema and by the
+  detector's type, but neither can occur — see the note below before writing
+  one.) **Omit the key entirely when you don't know the colour** and
   that cell is skipped for this check. `"none"` is a claim that the border is
-  plain, which is different from not knowing. Five of the 95 ported cells have no
-  `tier` for exactly this reason — they were dictated as having a bright border
-  with no colour named — and filling them in from whatever the detector currently
-  reports would make this file agree with the code by construction.
+  plain, which is different from not knowing. Filling a missing one in from
+  whatever the detector currently reports would make this file agree with the
+  code by construction.
+
+  **The name is wrong and is being kept only until the field is replaced.** This
+  field records the **frame colour**, and the frame is *not* the rune's tier —
+  measured 2026-09-17, see `EXPEDITION_LEAGUE_MECHANIC.md` §5.1. The tier is
+  carried by the **glyph's ink colour** and is fixed per rune shape; the frame is
+  per-panel state that the same rune has in one capture and not in another. Two
+  practical consequences when dictating: only `"none"` and `"blue"` occur in
+  practice (nothing has a gold or purple *frame* — a gold frame is the cage, and
+  belongs in `carriesForward`), and a cell with a purple glyph is `"none"` here
+  unless its frame is also coloured.
 
 - **`carriesForward`** — is this cell inside the separate, larger gold cage that
   marks the Remnant's succession pick? Independent of `tier`: a cell can have its

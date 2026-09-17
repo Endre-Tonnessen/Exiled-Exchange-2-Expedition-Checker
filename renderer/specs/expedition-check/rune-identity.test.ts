@@ -295,16 +295,23 @@ describe("resolveRowRunes", () => {
 
   it("names every cell in the row and carries the cage flag through", () => {
     const runes = resolveRowRunes(table, ratings, "Skill Level 20: Skyfall", [
-      { carriesForward: false, tier: "gold" },
-      { carriesForward: true, tier: "none" },
       { carriesForward: false, tier: "blue" },
+      { carriesForward: true, tier: "none" },
+      { carriesForward: false, tier: "none" },
     ]);
     expect(runes.map((r) => r.runeId)).toEqual(["opulent", "oath", "sky"]);
     expect(runes.map((r) => r.rating)).toEqual(["great", "trap", "unrated"]);
     expect(runes.find((r) => r.carriesForward)?.runeId).toBe("oath");
     // Tier and cage are independent layers and must not overwrite each other:
-    // cell 0 is gold-tiered but NOT caged, cell 1 is caged with no tier colour.
-    expect(runes[0].tier).toBe("gold");
+    // cell 0 has a frame colour but NO cage, cell 1 is caged with a plain frame.
+    //
+    // Cell 0 was "gold" until 2026-09-17. The detector cannot produce that -
+    // there is no gold frame, only a gold cage, and the cage is what
+    // carriesForward already records (EXPEDITION_LEAGUE_MECHANIC.md §5.1). A
+    // test pinning a state nothing upstream can emit passes forever and keeps
+    // the retracted model looking supported, so it is "blue" now: the one
+    // non-plain frame colour that has actually been observed.
+    expect(runes[0].tier).toBe("blue");
     expect(runes[0].carriesForward).toBe(false);
     expect(runes[1].tier).toBe("none");
   });

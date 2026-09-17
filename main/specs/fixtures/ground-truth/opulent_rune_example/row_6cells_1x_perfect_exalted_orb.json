@@ -1,5 +1,5 @@
 {
-  "notes": "Built from user dictation - this is the BOTTOM row of this test group (see row_6cells_1x_perfect_chaos_orb.json in this same folder for the top row). Filenames were standardized 2026-09-14 to drop position claims like 'top_row'/'bottom_row' entirely rather than encode them - the original filenames both said 'top_row' even though this file is actually the bottom row, a copy/paste naming error; row order/identity now lives only in the dictated rewardText and in fixtures/ground-truth/README.md's index-order matching rule, not in the filename. Reward text '1x Perfect Exalted Orb' follows the same '{n}x Perfect {currency}' pattern, not separately char-for-char dictated. Same resolved Opulent-carriesForward and Power-blue-tier facts as the Chaos Orb row - see that file's notes for the full explanation. Oath Rune (cell 5, last cell here) again NOT dictated as having any border - see that file's notes on the still-open oath blue-vs-purple question.",
+  "notes": "Built from user dictation - this is the BOTTOM row of this test group (see row_6cells_1x_perfect_chaos_orb.json in this same folder for the top row). Filenames were standardized 2026-09-14 to drop position claims like 'top_row'/'bottom_row' entirely rather than encode them - the original filenames both said 'top_row' even though this file is actually the bottom row, a copy/paste naming error; row order/identity now lives only in the dictated rewardText and in fixtures/ground-truth/README.md's index-order matching rule, not in the filename. Reward text '1x Perfect Exalted Orb' follows the same '{n}x Perfect {currency}' pattern, not separately char-for-char dictated. Same resolved Opulent-carriesForward and Power-blue-tier facts as the Chaos Orb row - see that file's notes for the full explanation. Oath Rune (cell 5, last cell here) again NOT dictated as having any border - see that file's notes on the still-open oath blue-vs-purple question. CORRECTED 2026-09-17, same as the Chaos Orb row: Opulent's tier went 'gold' -> 'none'. It has no gold frame of its own, only the cage outside and a gold glyph inside; the measurement is written out in that file's notes. The oath question is settled there too - purple is its glyph ink, blue was a frame.",
   "source": "ocr-playground/fixtures/ground-truth/opulent_rune_example/row_6cells_1x_perfect_exalted_orb.json",
   "image": "opulent_rune_example/row_6cells_1x_perfect_exalted_orb.bmp",
   "region": null,
@@ -28,7 +28,7 @@
           "runeId": "power"
         },
         {
-          "tier": "gold",
+          "tier": "none",
           "carriesForward": true,
           "runeId": "opulent"
         },

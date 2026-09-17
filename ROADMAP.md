@@ -27,13 +27,13 @@ to open it should eventually become a reason to open this app instead.
 
 ```
 cd main && npx vitest run          # 31 tests
-cd renderer && npx vitest run      # 54 tests  (one pre-existing failure in client-log.test.ts — not ours)
+cd renderer && npx vitest run      # 584 tests, 2 skipped, all passing (2026-09-17)
 ```
 
 Rune detection accuracy, graded over 11 real captures (19 rows, 95 cells):
 
 ```
-rows 17/19   cell counts 17/19 exact   tier 79/82 (96.3%)   cage 74/87 (85.1%)
+rows 17/19   cell counts 17/19 exact   tier 85/87 (97.7%)   cage 87/87 (100%)
 ```
 
 That suite **measures, it does not gate** — it fails only when a number drops
@@ -69,9 +69,15 @@ The expensive part is done; the work is not discarding it and drawing it.
 behind the existing alphas/dev flag so it isn't shipped UI.
 
 **The version worth building first:** load a fixture BMP *plus its ground truth*
-and draw expected-vs-detected together. That turns "tier 79/82" into "here is the
+and draw expected-vs-detected together. That turns "tier 85/87" into "here is the
 cell it got wrong and here is its hue profile", which is the one thing the
-playground is still genuinely needed for.
+playground is still genuinely needed for. Worth knowing before building it: the
+2026-09-17 session got exactly this signal out of a throwaway vitest file that
+dumped per-cell profiles and a raw HSV column scan to the console, plus
+PowerShell `System.Drawing` to crop and nearest-neighbour-upscale a cell to
+6–14x. Neither is a substitute for the real view, but the cheap version found a
+mechanic-level error in a few minutes, so don't treat the Vue work as a
+prerequisite for looking at pixels.
 
 **Known limit:** threshold sliders can't write back to `DEFAULT_TIER_THRESHOLDS`
 (a `const` in main). Tuning stays "adjust in the UI → hand-edit the constant →
@@ -88,10 +94,8 @@ for the schema and the PNG→BMP recipe.
 
 Specific gaps, roughly in order of value:
 
-- **The 5 undictated cells.** Five caged cells in the ported fixtures have no
-  `tier` key because the original dictation named no colour for them. They're
-  skipped for that check, which is why the tier denominator is 82 and not 90.
-  Naming those colours is the cheapest accuracy signal available.
+- ~~**The 5 undictated cells.**~~ Done 2026-09-17 — the tier denominator is now
+  87, the same as the cage one.
 - **The 3 unported playground fixtures.** `FullWindowsWith9plus...`,
   `ManyModifersandLongName3...` and `PlayerSkills2ManyModifers` are the hard
   cases — 7 rows, two-line rows, a garbled title bar. They were never verified on
@@ -99,8 +103,12 @@ Specific gaps, roughly in order of value:
   them from scratch. They're where the interesting failures live.
 - **Captures the current set has none of:** a panel with no cage anywhere, a
   hovered row (the game tints a whole row gold on hover — `classifyRowCells`
-  defends against exactly this and nothing tests it), purple-tier borders (the
-  set has blue and gold but no purple), and a 4K/non-1080p capture.
+  defends against exactly this and nothing tests it), a panel where the blue
+  frame sits on a rune *other* than the caged one and other than
+  stone/power/oath (the four captures have only those three, which is why what
+  the blue frame means is still open — see item 8), and a 4K/non-1080p capture.
+  A purple *border* is no longer on this list: measurement says none exists, and
+  the frame only ever comes up plain or blue.
 
 ---
 
@@ -143,8 +151,17 @@ Short version of what's open, in the doc's own order:
 - **E — lower the poll rate.** Cheapest possible change, but it buys performance
   by removing behaviour.
 
-Worth noting alongside: the rune detector currently costs a few milliseconds per
-capture on these fixtures, so it is not where the time goes. OCR is.
+Worth noting alongside: the rune detector costs 2.2–3.6 ms per capture on these
+fixtures (median of 20 runs, the 5-row panel being the slowest), so it is not
+where the time goes. OCR is.
+
+One easy win inside that, if it ever matters: `classifyRowCells` crops each cell
+and converts BGRA→BGR→HSV **twice** — once per edge, since 2026-09-17 — while
+`detectPanel` has already built a full-image HSV Mat and thrown it away. Passing
+an ROI of that Mat down would remove every per-cell conversion and close the
+BGRA-vs-HSV channel-order hazard `rune-vision.ts`'s header warns about at the
+same time. Left alone deliberately: 3.6 ms against OCR's ~300 ms is not worth
+a refactor of the one function this feature's correctness lives in.
 
 ---
 
@@ -253,7 +270,7 @@ evidence is below.
 | --- | --- | --- | --- | --- |
 | `rune-combinations.json` (314 recipes) | poe2db scrape | **Silently wrong rune names.** Identity resolution is entirely this file | **No tooling exists** — see below | **Highest** |
 | `rune-ratings.json` (6 runes) | Hand-compiled opinion | Recommends a trap, or misses one | Hand-edited; no date stamp | High |
-| `PANEL_GEOMETRY_DEFAULTS`, `DEFAULT_TIER_THRESHOLDS` | Pixel calibration | Rows/cells/borders misdetected after any UI restyle or a new tier colour | Hand-tuned against captures | Medium — **but now has a tripwire** (§2) |
+| `PANEL_GEOMETRY_DEFAULTS`, `DEFAULT_TIER_THRESHOLDS` | Pixel calibration | Rows/cells/cages misdetected after any UI restyle, or a new *frame* colour | Hand-tuned against captures | Medium — **but now has a tripwire** (§2) |
 | `parsing.ts` literals — `"runeshape"`, `skill\|spirit\|support`, gem level regex | UI text | Panel-open detection and gem pricing stop working | Hand-edited | Medium; also breaks under localisation |
 | `rumours/data.json` (19, incomplete) | Hand-compiled | n/a — not shipped yet | Hand-edited | Low today, inherits Highest if §5 ships |
 | Prices | Live trade API | Self-correcting | Automatic | **Lowest** |
@@ -353,9 +370,70 @@ Worth knowing before adding more:
   both accuracy denominators. Item 1's debug view would likely explain this in
   seconds; without it, `detectRowBands` is where to start.
 
+- **The accuracy ratchet stores numerators only.** `baseline.json` records
+  `tierCorrect` / `cageCorrect` but not `tierGraded` / `cageGraded`
+  (`panel-detection.test.ts`'s `Baseline` type `Omit`s them), so a fixture edit
+  that adds graded cells can mask a detector regression: add N easy ones while
+  losing N−1 on cells already graded, and `toBeGreaterThanOrEqual` still passes.
+  This is not hypothetical — the 2026-09-17 run added `tier` to 5 previously
+  undictated cells, taking `tierGraded` 20→25 in one fixture, so that commit's
+  tier gain genuinely mixes new dictation with detector improvement and the
+  ratchet cannot separate them. Recording the denominators and comparing ratios
+  would close it, and is a few lines.
+
+- **The two `oath` tier misses.** `Basic_test_1`'s oath cell has a real blue
+  frame drawn *inside* a gilded cage, and the blue peak in the classification
+  window reads 0.17 against a `ringFloor` of 0.4, so it reports `none`. It is the
+  only cell in the set with a blue frame nested inside a cage, so it may be the
+  cage crowding the window rather than the floor being wrong. Explain it before
+  touching `ringFloor`.
+
 ---
 
-## 8. Retiring the playground
+## 8. Stop reading the tier from pixels
+
+**The finding (measured 2026-09-17, written up in
+`EXPEDITION_LEAGUE_MECHANIC.md` §5.1):** a rune's tier is the colour of its
+**glyph**, not of any border, and it is **fixed per rune shape** — 23 identities
+over 78 cells, zero conflicts, and it agrees 8/8 with the independently-sourced
+tier table in §5 once you accept that blue tier is simply "not coloured". The
+coloured *frame* the detector reads is per-panel state, not a tier.
+
+**So the tier need not be detected at all.** Identity is already resolved in the
+renderer from the reward text (`EXPEDITION_RUNE_PORT_PLAN.md`), and tier follows
+from identity through a 34-row static table. That is free, exact, and immune to
+every pixel problem this feature has had. Only the **cage** is genuinely
+per-instance and has to come from the panel.
+
+**What that would mean concretely:**
+- A `tier` column on whatever table `rune-identity.ts` already keys by rune id.
+  §5.1 has 9 entries confirmed two ways and 4 more (`death`, `life`, `power`,
+  `soul`) confirmed from the fixtures alone; the rest are unobserved.
+- `ClassifiedCell.tier` and `RuneCellResult.tier` lose their reason to exist.
+  They are plumbed all the way to `rune-value.ts` but **nothing reads them** —
+  no rating, no display branch — so deleting them is close to free. Check
+  `settings-expedition.vue`'s mock builder, which sets `tier: "none"`.
+- The fixture `tier` field would stop being a detector metric. It is still worth
+  keeping as a *frame* metric if the blue frame turns out to matter (below);
+  otherwise it goes, and the suite grades cages and geometry only.
+
+**Do not start here.** Settle what the blue frame means first, because that
+decides whether the frame channel is worth detecting at all:
+
+- In each of the four capture groups **exactly one** rune identity carries a blue
+  frame, and it is in **every row** of that panel: `stone` in `full_live_images`,
+  `power` in both `More_complex_test_1` and `opulent_rune_example`, `oath` in
+  `Basic_test_1`. Same rune, different panels, different frame — so it is not a
+  rune property.
+- Best candidates: the runeshape you have selected or already placed in the
+  Remnant, or a hover-highlights-all-matching affordance. Both fit the data.
+- **This is one in-game observation, not a pixel problem.** Open the panel, note
+  which rune is blue-framed, move the mouse, look again. Ten seconds settles it
+  and nothing else will.
+
+---
+
+## 9. Retiring the playground
 
 Not a single task — the end state of the items above. `ocr-playground/` stops
 being needed once: the debug view (1) covers visual troubleshooting, the fixture

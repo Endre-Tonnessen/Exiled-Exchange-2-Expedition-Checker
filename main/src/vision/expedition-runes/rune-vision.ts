@@ -23,6 +23,8 @@ export interface HueBandThresholds {
   satMin: number;
   goldMin: number;
   goldMax: number;
+  /** Saturation floor for the GOLD band only - see the note on `satMin` in panel-detector.ts. */
+  goldSatMin: number;
   purpleMin: number;
   purpleMax: number;
   blueMin: number;
@@ -74,8 +76,16 @@ export function toGrayMat(bgraMat: any): any {
  * offsets (the cage outside, the rune's own frame a few px in) and the offset
  * between them is not fixed. Scanning a window of columns and taking each
  * band's peak finds whatever borders are actually there without needing either
- * offset - and `at` is what lets the caller tell the outer cage from the inner
- * tier frame afterwards.
+ * offset.
+ *
+ * `at` USED to be how the caller told the outer cage from the inner tier frame.
+ * It no longer is, and nothing reads it: there is no gold tier frame to tell a
+ * cage apart from (EXPEDITION_LEAGUE_MECHANIC.md §5.1), and the positional test
+ * built on it only ever rejected real cages. `classifyRowCells` separates them
+ * structurally instead - a cage has a bar at BOTH of a cell's edges. Kept
+ * because it costs nothing and is the obvious thing ROADMAP item 1's debug view
+ * will want, but note it is an offset into the crop it was measured on, which is
+ * not aligned to the cell's own left edge.
  */
 export function hueBandColumnProfile(
   hsvMat: any,
@@ -98,8 +108,14 @@ export function hueBandColumnProfile(
       const idx = (y * cols + x) * 3;
       const h = data[idx];
       const s = data[idx + 1];
-      if (s < thresholds.satMin) continue;
-      if (inRange(h, thresholds.goldMin, thresholds.goldMax)) gold++;
+      // Gold is tested FIRST and against its own, higher saturation floor. The
+      // parchment this UI is drawn on is itself gold-hued, and at the shared
+      // floor it passes - which is the whole reason a plain cell used to report
+      // a gold border. Keeping the else-if chain below means a gold-hued pixel
+      // that fails the gold floor is not then offered to the other bands.
+      if (inRange(h, thresholds.goldMin, thresholds.goldMax)) {
+        if (s >= thresholds.goldSatMin) gold++;
+      } else if (s < thresholds.satMin) continue;
       else if (inRange(h, thresholds.purpleMin, thresholds.purpleMax)) purple++;
       else if (inRange(h, thresholds.blueMin, thresholds.blueMax)) blue++;
     }

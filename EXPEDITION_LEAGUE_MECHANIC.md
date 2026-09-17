@@ -145,6 +145,10 @@ that project. Still worth a spot-check against poe2db.tw if this list is depende
 for anything load-bearing, since it's one project's own data file, not an official
 GGG export.)*
 
+**Read §5.1 alongside this.** The table below is sound, but *where the tier shows
+up on screen* is not where this project assumed: it is the colour of the glyph
+itself, not a coloured border. §5.1 has the measurement and extends the table.
+
 Higher tier ≈ generally more powerful/desirable effect, and — per the user's own
 description of the panel — gold is the top tier, purple the middle, blue the weakest,
 with meaningful variation *within* a tier too (specific shapes carry different
@@ -184,6 +188,71 @@ than from a secondhand guide.) Bait is
 notable as the one Runeshape that reportedly never appears in a normal Combinations
 row per that same source's own dev notes — worth confirming before building anything
 that assumes all 34 are selectable.)
+
+### 5.1 Where the tier actually appears on screen — measured, 2026-09-17
+
+*(Source: this repo's own fixtures. 11 real captures, 78 gradeable cells, measured
+with a raw HSV dump rather than read off a guide. This supersedes the assumption
+that the tier is a coloured **border**, which is what the detector and the fixture
+schema were both built around.)*
+
+**A rune cell carries three independent visual channels, not one.** Reading them
+as one collapses them, which is exactly what went wrong.
+
+| Channel | What it looks like | Varies with |
+| --- | --- | --- |
+| **Glyph ink** | The rune sigil itself, drawn in dark brown, purple, or gold | **The rune shape. Fixed.** |
+| **Plate frame** | The thin square around the plate: plain dark brown, or blue with corner rivets | The panel. **Not** the rune. |
+| **Succession cage** | A bright gilded frame with crown tabs, drawn *outside* the plate frame | The slot, per Remnant (§4) |
+
+**The tier is the glyph ink.** Over all 11 captures, every rune identity has
+exactly one ink colour — 23 identities, 78 observations, **zero conflicts** —
+including seven identities that appear in two or three unrelated captures
+(`life` in three, `oath` in two, `power`, `soul`, `vision`, `celestial`,
+`adaptive`). And it agrees with §5's table, which was compiled independently from
+in-game tooltips, on **all eight of its entries that these captures contain**
+(`Time` and `Sky` appear in no fixture; `Power` it lists as untiered), under this
+mapping:
+
+| §5 says | Ink measured | Runes |
+| --- | --- | --- |
+| Gold | gold ink | Opulent |
+| Purple | purple ink | Oath, Bond |
+| Blue | plain dark ink | Rage, Stone, Vision, Volcanic, Ward |
+
+So **blue is the baseline tier and gets no special colouring at all** — a blue
+rune is simply an uncoloured one. There is no blue ink: every "black" glyph
+measures at hue 11–15, one single population, with no dark-blue subgroup hiding
+in it. Runes not yet in §5's table that measure as purple ink, and are therefore
+purple-tier: **Death, Life, Power, Soul.** (Power was listed in §5 as
+"untiered, notably strong" — it is purple.)
+
+**The plate frame is not a tier.** `oath` is blue-framed in `Basic_test_1` and
+plain-framed in both `full_live_images` and `opulent_rune_example` — same rune,
+same glyph, different frame — so the frame cannot be a property of the rune. In
+each capture **exactly one** rune identity carries the blue frame, and it appears
+in every row of that panel. What it means is **not established**: candidates are
+the runeshape you have selected or already placed, or a highlight-all-matching
+hover. Distinguishing them needs one deliberate in-game observation, not more
+pixels. It is independent of both other channels — `power` is blue-framed *and*
+purple-inked, `stone` is blue-framed with plain ink, and `oath` in
+`Basic_test_1` is blue-framed, purple-inked **and** caged, all three at once.
+
+**Opulent has no gold frame.** This one mattered, because "opulent runes are
+gold-tiered AND caged" was the stated justification for a detector fallback that
+read a cage's gold as the rune's own tier. An HSV column scan across a caged
+opulent cell reads, outside-in: cage gold (H 20–24, S 110–120, V 170–200), then a
+dark brown frame (H 11–15, S 94–107, V 136–139), then parchment. That brown frame
+is the same population as a caged `protective` cell's (H 10–11, S 123–144,
+V 117–120) and a plain `bloodletting` cell's (H 11, S 122, V 117). Opulent's gold
+is its cage and its *glyph*; its frame is the ordinary brown one.
+
+**Consequence for tooling.** The tier is a static property of the rune shape, and
+identity is already resolved in the renderer from the reward text
+(`EXPEDITION_RUNE_PORT_PLAN.md`). So the tier does not need to be read from pixels
+**at all** — it can come from a 34-row lookup table keyed by rune id. The only
+genuinely per-instance thing in a cell is the **cage**, which is randomised per
+Remnant (§4) and must be read from the panel. `ROADMAP.md` item 8 has that entry.
 
 ## 6. The outer loop: Logbooks, Uncharted Waters, Island Rumours and Sagas
 
