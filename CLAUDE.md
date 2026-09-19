@@ -36,10 +36,12 @@ chase it, and don't report it as a regression.
 
 ## The Expedition features
 
-Two separate features sharing one screenshot. Docs, in reading order:
-`EXPEDITION_LEAGUE_MECHANIC.md` (the game), `EXPEDITION_CHECK.md` (the price
-check), `EXPEDITION_RUNE_TRACKING.md` (scoping), `EXPEDITION_RUNE_PORT_PLAN.md`
-(what was built and what wasn't).
+Two separate features sharing one screenshot. All Expedition docs live in
+`notes/expedition/`. In reading order: `EXPEDITION_LEAGUE_MECHANIC.md` (the game),
+`EXPEDITION_CHECK.md` (the price check), `EXPEDITION_RUNE_TRACKING.md` (scoping),
+`EXPEDITION_RUNE_PORT_PLAN.md` (what was built and what wasn't). Alongside them,
+`EXPEDITION_STRATEGY.md` is player-facing game knowledge rather than a spec — it
+constrains no code, but records what the mechanic actually rewards.
 
 `ROADMAP.md` holds what's planned but not built, and what has already been ruled
 out — read it before proposing work, and add to it rather than re-deriving.
@@ -80,7 +82,7 @@ runs on the worker while OCR runs in its subprocess, from one shared screenshot
   red/blue trade places, so every gold gilded frame reads as blue. Hue bands are
   on OpenCV's 0–179 scale, so use `COLOR_BGR2HSV`, not `_FULL`.
 - **Only gilded runes propagate**, and **a row can have several.** Published
-  guides say one per Remnant and are wrong — `EXPEDITION_LEAGUE_MECHANIC.md`
+  guides say one per Remnant and are wrong — `notes/expedition/EXPEDITION_LEAGUE_MECHANIC.md`
   records the correction. Never store "the caged rune" as a single value; an
   earlier version did and silently dropped the rest.
 - **Gilding detection is unreliable in practice** — the principal known

@@ -9,11 +9,12 @@ Existing docs this defers to, rather than repeating:
 
 | Doc | What it holds |
 | --- | --- |
-| `EXPEDITION_LEAGUE_MECHANIC.md` | how the in-game mechanic actually works |
-| `EXPEDITION_CHECK.md` | the price-check feature as built |
-| `EXPEDITION_RUNE_TRACKING.md` | rune-feature scoping, features 1–5 in build order |
-| `EXPEDITION_RUNE_PORT_PLAN.md` | what was ported from the playground, and what deliberately wasn't |
-| `EXPEDITION_OCR_PERFORMANCE.md` | **the** performance analysis — measured numbers, ranked options, one dead end |
+| `notes/expedition/EXPEDITION_LEAGUE_MECHANIC.md` | how the in-game mechanic actually works |
+| `notes/expedition/EXPEDITION_STRATEGY.md` | how to *play* it — measured findings on tablets, node mods and runes |
+| `notes/expedition/EXPEDITION_CHECK.md` | the price-check feature as built |
+| `notes/expedition/EXPEDITION_RUNE_TRACKING.md` | rune-feature scoping, features 1–5 in build order |
+| `notes/expedition/EXPEDITION_RUNE_PORT_PLAN.md` | what was ported from the playground, and what deliberately wasn't |
+| `notes/expedition/EXPEDITION_OCR_PERFORMANCE.md` | **the** performance analysis — measured numbers, ranked options, one dead end |
 | `LOCAL_DIVERGENCE.md` | every change this fork makes to upstream's own files |
 | `main/specs/fixtures/README.md` | how to add a rune-detection fixture |
 
@@ -132,7 +133,7 @@ Specific gaps, roughly in order of value:
 
 ## 4. OCR performance
 
-**Read `EXPEDITION_OCR_PERFORMANCE.md` before touching any of this.** It has the
+**Read `notes/expedition/EXPEDITION_OCR_PERFORMANCE.md` before touching any of this.** It has the
 measured breakdown, five ranked options, a "do not redo" list, and one option
 (D — capturing a sub-region) that is *blocked and closed*: `electron-overlay-window`'s
 `screenshot()` takes no arguments, so there is no sub-region capture to be had.
@@ -167,7 +168,7 @@ a refactor of the one function this feature's correctness lives in.
 
 ## 5. Island Rumours — a second mechanic, same pipeline shape
 
-**The mechanic is documented in `EXPEDITION_LEAGUE_MECHANIC.md` §6** — logbooks,
+**The mechanic is documented in `notes/expedition/EXPEDITION_LEAGUE_MECHANIC.md` §6** — logbooks,
 Uncharted Waters, rumours, Sagas, and the sourcing caveats. Read that first; this
 section is only about whether and how to build something on top of it.
 
@@ -393,14 +394,14 @@ Worth knowing before adding more:
 ## 8. Stop reading the tier from pixels
 
 **The finding (measured 2026-09-17, written up in
-`EXPEDITION_LEAGUE_MECHANIC.md` §5.1):** a rune's tier is the colour of its
+`notes/expedition/EXPEDITION_LEAGUE_MECHANIC.md` §5.1):** a rune's tier is the colour of its
 **glyph**, not of any border, and it is **fixed per rune shape** — 23 identities
 over 78 cells, zero conflicts, and it agrees 8/8 with the independently-sourced
 tier table in §5 once you accept that blue tier is simply "not coloured". The
 coloured *frame* the detector reads is per-panel state, not a tier.
 
 **So the tier need not be detected at all.** Identity is already resolved in the
-renderer from the reward text (`EXPEDITION_RUNE_PORT_PLAN.md`), and tier follows
+renderer from the reward text (`notes/expedition/EXPEDITION_RUNE_PORT_PLAN.md`), and tier follows
 from identity through a 34-row static table. That is free, exact, and immune to
 every pixel problem this feature has had. Only the **cage** is genuinely
 per-instance and has to come from the panel.
@@ -440,7 +441,7 @@ being needed once: the debug view (1) covers visual troubleshooting, the fixture
 suite (2) covers regression measurement, and any remaining detector work happens
 against `main/specs/fixtures/`. The playground's `rune-sightings/` (46 labelled
 single-cell crops) and `rune-icons/` (33 reference sprites) have **not** been
-ported and currently have no use here — `EXPEDITION_RUNE_PORT_PLAN.md` explains
+ported and currently have no use here — `notes/expedition/EXPEDITION_RUNE_PORT_PLAN.md` explains
 why the image-matching path they exist for was dropped in favour of resolving
 identity from the reward text. Revisit only if generic currency rows ever need
 naming.

@@ -96,8 +96,8 @@ code rather than in generated data, costs nothing at merge time.
   `renderer/src/web/background/Prices.ts`,
   `renderer/src/web/settings/SettingsWindow.vue`
 - **Commits:** `git log --oneline origin/master..HEAD --grep=Expedition`
-- **Why it exists:** it is the reason this fork exists. See `EXPEDITION_CHECK.md`,
-  `EXPEDITION_LEAGUE_MECHANIC.md`, `EXPEDITION_RUNE_TRACKING.md`.
+- **Why it exists:** it is the reason this fork exists. See `notes/expedition/EXPEDITION_CHECK.md`,
+  `notes/expedition/EXPEDITION_LEAGUE_MECHANIC.md`, `notes/expedition/EXPEDITION_RUNE_TRACKING.md`.
 - **Drop it when:** never, unless upstream ships the same feature.
 - **Careful:** every hook into an upstream file is an *added registration* —
   a widget entry, a shortcut, an IPC type, a config default. On a conflict, re-add
@@ -148,7 +148,11 @@ code rather than in generated data, costs nothing at merge time.
 ### 5. Documentation
 
 - **Files:** `README.md` (+175/-50), `DEVELOPING.md` (+68/-0), and local-only
-  docs — `CLAUDE.md`, `AI_POLICY.md`, `EXPEDITION_*.md`, this file.
+  docs — `CLAUDE.md`, `ROADMAP.md`, `notes/expedition/*.md`, this file.
+- **The Expedition docs live in `notes/expedition/`**, moved there 2026-09-19 when
+  the fork root grew to twelve markdown files. `notes/` is a local-only directory;
+  upstream's own docs live in `docs/`, which this fork does not add to. Keeping the
+  two separate is what makes the divergence in this section easy to state.
 - **Careful:** `README.md` and `DEVELOPING.md` are the two upstream also edits.
 - **`README.md` is now a local rewrite, not upstream's file with additions.**
   It was restructured so the capability showcase comes first; upstream's own 50

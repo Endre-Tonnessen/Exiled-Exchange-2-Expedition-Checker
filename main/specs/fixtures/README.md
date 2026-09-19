@@ -98,7 +98,7 @@ and partly four ground-truth cells that turned out to be recording the cage (see
 
   **The name is wrong and is being kept only until the field is replaced.** This
   field records the **frame colour**, and the frame is *not* the rune's tier —
-  measured 2026-09-17, see `EXPEDITION_LEAGUE_MECHANIC.md` §5.1. The tier is
+  measured 2026-09-17, see `notes/expedition/EXPEDITION_LEAGUE_MECHANIC.md` §5.1. The tier is
   carried by the **glyph's ink colour** and is fixed per rune shape; the frame is
   per-panel state that the same rune has in one capture and not in another. Two
   practical consequences when dictating: only `"none"` and `"blue"` occur in
@@ -113,7 +113,7 @@ and partly four ground-truth cells that turned out to be recording the cage (see
 
 - **`runeId`** — optional, and **not graded here**. Identity is resolved in the
   renderer from the reward text, never from pixels (see
-  `EXPEDITION_RUNE_PORT_PLAN.md`). It is recorded for the renderer-side tests and
+  `notes/expedition/EXPEDITION_RUNE_PORT_PLAN.md`). It is recorded for the renderer-side tests and
   because it is the most valuable thing in a dictation.
 
 - **`rewardText`** — also not graded here; this suite never runs OCR. Kept for
