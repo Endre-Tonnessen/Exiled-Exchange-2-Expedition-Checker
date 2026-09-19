@@ -92,7 +92,7 @@ One scan is a full game-window screenshot, cropped to the region and passed to
 `Windows.Media.Ocr`. It costs roughly 300 ms, of which about 18 ms is the OCR
 engine; the remainder is process startup and marshalling. Measurements and
 optimisation options are in
-[EXPEDITION_OCR_PERFORMANCE.md](./EXPEDITION_OCR_PERFORMANCE.md).
+[EXPEDITION_OCR_PERFORMANCE.md](./notes/expedition/EXPEDITION_OCR_PERFORMANCE.md).
 
 | State | Scans |
 | --- | --- |
@@ -159,9 +159,10 @@ The Expedition work has its own notes:
 
 | Doc | Contents |
 | --- | --- |
-| [EXPEDITION_CHECK.md](./EXPEDITION_CHECK.md) | Architecture of the price check, the layout problem, and constraints on future work. |
-| [EXPEDITION_OCR_PERFORMANCE.md](./EXPEDITION_OCR_PERFORMANCE.md) | Where the ~300 ms goes, what has been tried, and the ranked options. |
-| [EXPEDITION_RUNE_TRACKING.md](./EXPEDITION_RUNE_TRACKING.md) | Scoping for the rune layer, and the features not yet built. |
+| [EXPEDITION_CHECK.md](./notes/expedition/EXPEDITION_CHECK.md) | Architecture of the price check, the layout problem, and constraints on future work. |
+| [EXPEDITION_OCR_PERFORMANCE.md](./notes/expedition/EXPEDITION_OCR_PERFORMANCE.md) | Where the ~300 ms goes, what has been tried, and the ranked options. |
+| [EXPEDITION_RUNE_TRACKING.md](./notes/expedition/EXPEDITION_RUNE_TRACKING.md) | Scoping for the rune layer, and the features not yet built. |
+| [EXPEDITION_STRATEGY.md](./notes/expedition/EXPEDITION_STRATEGY.md) | How to actually run Expeditions — measured findings on tablets, node mods and runes. |
 | [LOCAL_DIVERGENCE.md](./LOCAL_DIVERGENCE.md) | Every change this fork makes to upstream's files, and the condition under which each stops being needed. Read before merging upstream in. |
 
 ## Acknowledgments

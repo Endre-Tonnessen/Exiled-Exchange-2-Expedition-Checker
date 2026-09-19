@@ -3,7 +3,9 @@
 Background reading for whoever (human or agent) next extends this fork's Expedition
 tooling. This is **game-knowledge**, not code documentation — see
 [EXPEDITION_CHECK.md](./EXPEDITION_CHECK.md) for the widget that OCRs the panel this
-document describes. It exists because the current widget only prices the *reward* on
+document describes. Its sibling [EXPEDITION_STRATEGY.md](./EXPEDITION_STRATEGY.md)
+covers how to *play* the mechanic profitably — what to buy and what to skip — where
+this doc covers how it *works*. It exists because the current widget only prices the *reward* on
 each row; the mechanic also has a second, currently-untracked axis (which runes each
 row carries forward) that this doc lays the groundwork for reasoning about.
 
